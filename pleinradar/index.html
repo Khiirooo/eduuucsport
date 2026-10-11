@@ -879,7 +879,7 @@ body.map-is-expanded{overflow:hidden}
   function normalizeData(raw){
     if(!raw||!Array.isArray(raw.stations))throw new Error('Fichier de données incorrect');
     return raw.stations.filter(s=>Number.isFinite(Number(s.lat))&&Number.isFinite(Number(s.lon))&&s.lat>=49&&s.lat<=52&&s.lon>=2&&s.lon<=7).map(s=>({
-      id:String(s.id||`${s.lat}-${s.lon}`),name:String(s.name||s.brand||'Station-service'),brand:String(s.brand||''),address:String(s.address||''),city:String(s.city||''),postalCode:String(s.postalCode||''),lat:Number(s.lat),lon:Number(s.lon),prices:typeof s.prices==='object'&&s.prices?s.prices:{},priceUpdatedAt:s.priceUpdatedAt||null,priceUpdatedAtByFuel:s.priceUpdatedAtByFuel||{}
+      id:String(s.id||`${s.lat}-${s.lon}`),name:String(s.name||s.brand||'Station-service'),brand:String(s.brand||''),address:String(s.address||''),city:String(s.city||''),postalCode:String(s.postalCode||''),lat:Number(s.lat),lon:Number(s.lon),prices:typeof s.prices==='object'&&s.prices?s.prices:{},priceUpdatedAt:s.priceUpdatedAt||null,priceUpdatedAtByFuel:s.priceUpdatedAtByFuel||{},services:s.services&&typeof s.services==='object'?s.services:{}
     }));
   }
   async function loadOfficial(){
@@ -931,14 +931,14 @@ body.map-is-expanded{overflow:hidden}
       const items=result.elements||[];
       state.stations=items.map(e=>{
         const t=e.tags||{};const lat=Number(e.lat??e.center?.lat),lon=Number(e.lon??e.center?.lon);
-        return {id:`osm-${e.type}-${e.id}`,name:t.name||t.brand||t.operator||'Station-service',brand:t.brand||'',address:[t['addr:street'],t['addr:housenumber']].filter(Boolean).join(' '),city:t['addr:city']||'',postalCode:t['addr:postcode']||'',lat,lon,prices:{}};
+        return {id:`osm-${e.type}-${e.id}`,name:t.name||t.brand||t.operator||'Station-service',brand:t.brand||'',address:[t['addr:street'],t['addr:housenumber']].filter(Boolean).join(' '),city:t['addr:city']||'',postalCode:t['addr:postcode']||'',lat,lon,prices:{},services:{wash:t.car_wash==='yes'||t['service:car_wash']==='yes',air:t.compressed_air==='yes'||t['service:compressed_air']==='yes',shop:t.shop==='yes'||t.shop==='convenience',always:t.opening_hours==='24/7'}};
       }).filter(s=>Number.isFinite(s.lat)&&Number.isFinite(s.lon));
       notify('Stations actualisées depuis OpenStreetMap. Les prix par station ne sont pas disponibles pour le moment. Vérifie la mise à jour automatique.','warning');
     }catch(e){state.stations=[];notify('Impossible de charger les prix ou les stations. Vérifie ta connexion, puis actualise la page.','error');}
   }
   function getResults(){
     const nearby=state.stations.map(s=>({...s,distance:kmBetween(state.center,s)})).filter(s=>state.route?routeGap(s)<=5:s.distance<=state.radius).sort((a,b)=>a.distance-b.distance);
-    const available=nearby.map(priceOf).filter(p=>p!==null);const best=available.length?Math.min(...available):null;const highest=available.length?Math.max(...available):null;
+    const available=nearby.filter(serviceOk).map(priceOf).filter(p=>p!==null);const best=available.length?Math.min(...available):null;const highest=available.length?Math.max(...available):null;
     let filtered=nearby.filter(s=>(!state.onlyPriced||priceOf(s)!==null)&&(!state.favoritesOnly||state.favorites.has(s.id))&&serviceOk(s));
     if(state.sort==='price')filtered.sort((a,b)=>(priceOf(a)??Infinity)-(priceOf(b)??Infinity)||a.distance-b.distance);
     if(state.sort==='net')filtered.sort((a,b)=>(totalCost(a)??Infinity)-(totalCost(b)??Infinity));
@@ -1060,7 +1060,8 @@ body.map-is-expanded{overflow:hidden}
     map.invalidateSize({pan:false,animate:false});
     if($('.map-column').classList.contains('is-focused')&&state.selectedId&&stations.some(s=>s.id===state.selectedId)){
       const chosen=stations.find(s=>s.id===state.selectedId);map.setView([chosen.lat,chosen.lon],16,{animate:false});
-    }else if(stations.length){map.fitBounds(bounds.pad(.11),{maxZoom:14,animate:false});}
+    }else if(state.route&&routeLayer){map.fitBounds(routeLayer.getBounds().pad(.15),{animate:false});}
+    else if(stations.length){map.fitBounds(bounds.pad(.11),{maxZoom:14,animate:false});}
     else{map.setView([state.center.lat,state.center.lon],11,{animate:false});}
     requestAnimationFrame(() => map.invalidateSize({pan:false,animate:false}));
   }
