@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#102721" />
+  <meta name="description" content="Comparez les prix des carburants près de chez vous en Belgique. Carte, classement par prix, carburant et calcul du coût du plein." />
+  <title>PleinRadar — Le plein au bon prix</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoCA5cEghNshw=" crossorigin="" />
+  <style>
+:root{--ink:#112820;--muted:#7b8985;--surface:#fff;--canvas:#f6f8f6;--line:#e7ece8;--lime:#d5ff6c;--lime-dark:#b9e94d;--green:#275a43;--radius:20px;--shadow:0 12px 42px rgba(16,44,29,.045)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--canvas);font-family:'DM Sans',sans-serif;color:var(--ink);font-size:14px;-webkit-font-smoothing:antialiased}button,input,select{font:inherit}button{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #9dd455;outline-offset:3px}a{color:inherit}button:disabled{opacity:.5;cursor:wait}.sr-only,.skip-link:not(:focus){position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.skip-link:focus{position:absolute;top:10px;left:10px;z-index:9999;background:#fff;padding:12px;border-radius:8px}.app-shell{min-height:100vh}.container{width:min(1270px,calc(100% - 84px));margin:0 auto}.site-header{height:91px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 max(42px,calc((100vw - 1270px)/2));border-bottom:1px solid #f0f1ef}.brand{display:flex;align-items:center;gap:12px;text-decoration:none;font-family:'Outfit',sans-serif;font-weight:850;font-size:24px;letter-spacing:-1.1px;line-height:1}.brand>span:last-child{display:block}.brand small{display:block;font:600 10px 'DM Sans',sans-serif;color:#7b8d82;letter-spacing:1.3px;text-transform:uppercase;margin-top:6px}.brand-icon{display:grid;place-items:center;width:46px;height:46px;background:var(--ink);border-radius:14px;color:var(--lime)}.brand-icon svg{width:30px;height:30px}.brand-accent{color:#70a128}.header-actions{display:flex;align-items:center;gap:30px}.country{font-weight:700;color:#394c43;display:flex;align-items:center;gap:8px}.flag{font-size:19px}.nav-link{border:0;background:none;color:#34453b;display:flex;gap:8px;align-items:center;font-weight:700}.nav-link svg{width:19px;height:19px}.favorite-count{min-width:18px;height:18px;font-size:10px;border-radius:12px;background:#e6efdc;display:grid;place-items:center}.favorite-count[hidden]{display:none}.status-chip{background:#f4f7f1;border:1px solid #e8eee5;border-radius:26px;display:flex;align-items:center;gap:10px;padding:12px 15px;font-size:12px;font-weight:800;color:#315540}.status-dot,.pulse-dot{width:8px;height:8px;border-radius:50%;background:#64ad53;display:inline-block;box-shadow:0 0 0 4px #e5f3e2}.arrow-down{color:#699475;margin-left:4px}.hero{width:min(1270px,calc(100% - 84px));margin:34px auto 0;background:#102820;min-height:444px;position:relative;overflow:hidden;border-radius:25px;display:grid;grid-template-columns:1.25fr .75fr;isolation:isolate}.hero:before{content:'';position:absolute;inset:0;z-index:-1;background:radial-gradient(circle at 78% 58%,#1b4535 0,transparent 43%),radial-gradient(circle at 10% 110%,#184235 0,transparent 40%)}.hero-orbit{position:absolute;width:680px;height:680px;border:1px solid rgba(215,255,165,.06);border-radius:50%;right:-135px;top:-110px;z-index:-1}.hero-orbit.two{width:500px;height:500px;right:-45px;top:-20px}.hero-copy{padding:55px 0 52px 65px;position:relative;z-index:2}.eyebrow{display:flex;align-items:center;gap:9px;color:#c5ecbd;font-weight:800;letter-spacing:2px;font-size:10px;margin:0 0 20px}.eyebrow-star{color:#d5ff6c;font-size:21px;line-height:.7}.hero h1{font-family:'Outfit',sans-serif;font-weight:850;letter-spacing:-3.2px;line-height:1.02;font-size:clamp(46px,4.5vw,70px);margin:0 0 20px;color:#fff}.hero h1 span{color:var(--lime)}.hero-description{color:#bad0c5;font-size:15px;line-height:1.8;max-width:510px;margin:0 0 27px}.search-panel{width:min(565px,calc(100vw - 150px));height:64px;background:#fff;border-radius:13px;display:flex;align-items:center;padding:7px;box-shadow:0 12px 45px rgba(0,0,0,.12)}.search-icon{width:44px;display:grid;place-items:center;color:#7e9284;flex-shrink:0}.search-icon svg{width:19px;height:19px}.search-panel input{min-width:0;flex:1;border:0;outline:0;font-size:14px;color:var(--ink);background:none;font-weight:700}.search-panel input::placeholder{font-weight:500;color:#a1aaa3}.location-button{border:0;background:transparent;color:#547c5f;width:42px;height:42px;display:grid;place-items:center;border-radius:9px;margin-right:7px}.location-button:hover{background:#f0f6eb}.location-button svg{width:20px;height:20px}.search-button{border:0;border-radius:9px;height:50px;padding:0 22px;background:var(--lime);font-size:13px;font-weight:900;white-space:nowrap;color:#173324}.search-button:hover{background:#c1ed51}.search-button span{margin-left:10px;font-size:18px;font-weight:400}.quick-cities{margin:18px 0 0;display:flex;flex-wrap:wrap;align-items:center;gap:9px;font-size:11px;color:#acc4b6}.quick-cities button{border:1px solid #456355;background:rgba(255,255,255,.025);color:#cbe0d4;padding:7px 12px;border-radius:50px;font-weight:700;font-size:11px}.quick-cities button:hover{border-color:var(--lime);color:#fff}.hero-aside{position:relative;display:grid;place-items:center}.hero-graphic{width:340px;height:340px;position:relative;display:grid;place-items:center}.graphic-ring{position:absolute;border:1px dashed rgba(213,255,108,.22);border-radius:50%;width:310px;height:310px}.graphic-ring.ring-b{width:235px;height:235px;border-style:solid;border-color:rgba(213,255,108,.10)}.graphic-pump{position:relative;z-index:2;transform:rotate(-8deg);filter:drop-shadow(0 26px 22px rgba(0,0,0,.2))}.graphic-pump svg{width:172px;height:220px}.floating-label{position:absolute;z-index:3;background:#fff;border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.2);padding:13px 15px;display:flex;align-items:center;gap:11px;font-weight:800;color:#183226;font-size:13px}.label-top{top:48px;right:-25px}.label-top>span{font-size:11px}.label-top::first-letter{font-size:20px}.label-bottom{bottom:49px;left:-33px;background:#224939;color:#fff;font-size:11px}.floating-check{width:23px;height:23px;display:grid;place-items:center;background:var(--lime);border-radius:50%;color:#1b3928;font-size:14px}.notification{margin-top:22px;padding:15px 18px;border:1px solid #d6e3cf;border-radius:13px;background:#eff8eb;color:#285938;font-size:13px;font-weight:600}.notification.warning{border-color:#f6dfb6;background:#fff9eb;color:#86622e}.notification.error{background:#fff4f2;color:#a44332;border-color:#f1d9d3}.notification[hidden]{display:none}.section-label{display:flex;align-items:center;gap:9px;font-size:10px;font-weight:900;letter-spacing:1.8px;color:#6b8274}.section-label-icon{width:22px;height:22px;display:grid;place-items:center;background:#e6efd9;color:#547f4a;border-radius:7px;font-size:13px}.filter-section{padding-top:40px}.fuel-tabs{display:flex;gap:11px;overflow-x:auto;padding:15px 0 8px;scrollbar-width:thin}.fuel-tab{min-width:max-content;background:#fff;border:1px solid #e7ede6;border-radius:12px;padding:16px 17px;display:flex;align-items:center;gap:8px;font-weight:800;font-size:13px;transition:background .15s,border .15s,box-shadow .15s}.fuel-tab:hover{border-color:#aec993}.fuel-tab.active{background:var(--ink);border-color:var(--ink);color:#fff;box-shadow:0 8px 20px rgba(21,47,30,.12)}.fuel-tab small{font-size:10px;padding:4px 7px;border-radius:5px;background:#eff3ec;color:#65806b;font-weight:900;letter-spacing:.3px}.fuel-tab.active small{background:#365142;color:var(--lime)}.fuel-drop{color:#80b346;font-size:18px}.fuel-tab.active .fuel-drop{color:var(--lime)}.overview{padding-top:46px}.overview-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:20px}.section-kicker{font-size:10px;font-weight:900;letter-spacing:1.8px;color:#6f9876;margin:0 0 9px}.overview h2{font-family:'Outfit',sans-serif;letter-spacing:-1.4px;font-size:34px;margin:0;font-weight:800}.city-title-dot{color:#8ebf4d}.overview-description{color:#8c9991;font-size:13px;margin:8px 0 0}.update-pill{display:flex;gap:10px;align-items:center;background:#eaf1e9;color:#507059;border-radius:999px;padding:10px 15px;font-size:11px;font-weight:700;margin-bottom:5px;white-space:nowrap}.pulse-dot{box-shadow:0 0 0 3px #deebdb;width:7px;height:7px}.stats-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:25px}.stat-card{background:#fff;border:1px solid #edf0e9;border-radius:17px;min-height:162px;padding:23px 24px;box-shadow:var(--shadow)}.price-stat{background:#e9f6d9;border-color:#e5efdc}.stat-top{display:flex;align-items:center;justify-content:space-between;font-size:10px;color:#69836e;font-weight:900;letter-spacing:1.25px}.stat-icon{color:#4d9a47;font-size:20px}.stat-icon.muted{color:#8daa89}.stat-value{display:flex;align-items:baseline;gap:5px;margin:9px 0 3px;line-height:1}.stat-value>span{font-family:'Outfit',sans-serif;font-weight:800;font-size:42px;letter-spacing:-1px}.stat-value small{font-weight:800;color:#668a5d;font-size:13px}.stat-card p{color:#8c9a8f;margin:11px 0 0;font-size:11px;font-weight:600}.price-stat p{color:#66855b}.results-section{padding-top:50px}.results-label{margin-bottom:17px}.controls-bar{background:#fff;border:1px solid #e8eee7;border-radius:17px;padding:15px 20px;display:flex;gap:17px;align-items:end;justify-content:space-between;flex-wrap:wrap}.control-group{min-width:170px;flex:1}.control-group:nth-child(2){flex:1.35}.control-group label{display:block;font-weight:800;color:#8b9a8d;font-size:10px;letter-spacing:.2px;margin:0 0 8px}.select-wrap,.tank-wrap{height:40px;position:relative;border:1px solid #e5eae2;border-radius:9px;background:#f9fbf8;display:flex;align-items:center}.select-wrap select{border:0;background:transparent;appearance:none;outline:0;width:100%;height:100%;padding:0 35px 0 11px;font-size:12px;font-weight:800;color:#244235;cursor:pointer}.select-wrap>span{position:absolute;right:13px;pointer-events:none;font-size:17px;color:#71916a;top:7px}.tank-group{flex:0 1 135px;min-width:105px}.tank-wrap input{width:75px;background:none;border:0;padding-left:11px;outline:0;font-weight:800;font-size:12px}.tank-wrap span{color:#829384;font-size:11px;font-weight:700}.toggle-group{min-height:40px;display:flex;align-items:center;gap:9px;color:#516657;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap}.toggle-group input{position:absolute;opacity:0;width:1px;height:1px}.toggle-slider{width:38px;height:22px;background:#dfe8dd;position:relative;border-radius:20px;transition:background .2s;flex-shrink:0}.toggle-slider:after{position:absolute;content:'';width:16px;height:16px;left:3px;top:3px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #a5aca4;transition:transform .2s}.toggle-group input:checked+.toggle-slider{background:#2e5c40}.toggle-group input:checked+.toggle-slider:after{transform:translateX(16px)}.toggle-group input:focus-visible+.toggle-slider{outline:3px solid #9dd455;outline-offset:3px}.results-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.93fr);gap:22px;margin-top:24px;align-items:start}.list-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:15px}.list-header h3{font:800 19px 'Outfit',sans-serif;letter-spacing:-.45px;margin:0}.list-header h3 span{font:800 11px 'DM Sans',sans-serif;color:#6b8b6c;background:#e8f1df;border-radius:50px;padding:5px 8px;vertical-align:middle;margin-left:5px}.list-header p{font-size:11px;color:#94a299;margin:7px 0 0}.refresh-link{border:0;background:none;white-space:nowrap;color:#5b8b4e;font-weight:800;font-size:12px}.refresh-link span{font-size:19px;vertical-align:-1px}.station-list{display:flex;flex-direction:column;gap:11px}.station-card{border:1px solid #e7ece5;background:#fff;border-radius:16px;box-shadow:var(--shadow);padding:18px 20px 17px;transition:box-shadow .2s,border .2s;position:relative}.station-card:hover{border-color:#bed3b3;box-shadow:0 13px 35px rgba(20,50,35,.075)}.station-card.is-best{border:1.5px solid #97c36e;background:linear-gradient(140deg,#fff 70%,#f7fceb)}.station-card.is-selected{box-shadow:0 0 0 2px #9fc87a}.station-top{display:flex;align-items:flex-start;gap:13px}.station-logo{width:45px;height:45px;border-radius:12px;flex-shrink:0;display:grid;place-items:center;background:#edf2e9;color:#517952;font-family:'Outfit',sans-serif;font-size:17px;font-weight:850;letter-spacing:-1px}.station-details{min-width:0;flex:1}.station-name{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0;font:800 17px 'Outfit',sans-serif;line-height:1.3;letter-spacing:-.3px;overflow-wrap:anywhere}.best-badge{border-radius:6px;background:#e1f6bd;color:#45722f;font:900 9px 'DM Sans',sans-serif;letter-spacing:.35px;padding:6px 7px}.demo-badge{background:#fff0cd;color:#936627}.station-address{font-size:11px;line-height:1.6;color:#8d9a91;margin-top:4px;overflow-wrap:anywhere}.station-distance{display:flex;align-items:center;gap:4px;white-space:nowrap;color:#829489;font-size:11px;font-weight:800;margin-top:3px}.station-distance svg{width:13px;height:13px}.station-price-row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:16px;padding-top:13px;border-top:1px solid #edf1ec}.station-price{font-family:'Outfit',sans-serif;font-size:32px;line-height:1.1;font-weight:800;letter-spacing:-1.1px}.station-price span{font:700 12px 'DM Sans',sans-serif;letter-spacing:0;color:#85958a}.station-price.unknown{font:800 15px 'DM Sans',sans-serif;color:#8a9890;letter-spacing:0}.station-price-caption{font-size:10px;color:#93a199;margin-top:5px}.station-tank{text-align:right}.station-tank strong{display:block;font:800 16px 'Outfit',sans-serif}.station-tank span{font-size:10px;color:#8d9d90}.station-actions{display:flex;align-items:center;gap:9px;margin-top:15px}.route-button{border-radius:9px;background:#173c2b;border:0;color:#fff;font-size:11px;font-weight:800;padding:11px 15px;text-decoration:none;display:inline-flex;gap:9px;align-items:center}.route-button:hover{background:#28563b}.detail-button{border-radius:9px;background:#f4f7f2;border:1px solid #e9eee7;color:#53715b;font-size:11px;font-weight:800;padding:10px 13px}.detail-button:hover{background:#eaf0e8}.star-button{margin-left:auto;width:37px;height:37px;border:1px solid #e7ece6;background:#fff;color:#94a69c;display:grid;place-items:center;border-radius:9px}.star-button svg{width:19px;height:19px}.star-button.is-favorite{color:#598a47;background:#edf7e3;border-color:#cee4be}.all-prices{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:15px;border-top:1px dashed #e1e9df;padding-top:14px}.grade-chip{background:#f4f7f2;border-radius:9px;padding:9px 11px}.grade-chip span{color:#829688;font-size:9px;font-weight:800;display:block}.grade-chip strong{display:block;font:800 13px 'Outfit',sans-serif;margin-top:4px}.grade-chip.no-price strong{color:#9fab9e}.show-more-wrap{text-align:center;margin-top:16px}.show-more-wrap button{border-radius:10px;border:1px solid #d5dfd3;background:#fff;font-weight:800;font-size:12px;color:#496f51;padding:13px 20px}.map-column{position:sticky;top:22px}.map-card{overflow:hidden;background:#fff;border:1px solid #e5eae3;border-radius:18px;box-shadow:var(--shadow)}.map-heading{height:67px;display:flex;justify-content:space-between;align-items:center;padding:0 19px}.map-heading>div{display:flex;gap:9px;align-items:center}.map-heading strong{font:800 16px 'Outfit',sans-serif}.map-heading-pin{font-size:18px;color:#4e9c61}.map-heading>span{color:#93a496;font-size:11px;font-weight:800;background:#f3f7f1;padding:7px 9px;border-radius:7px}#map{height:450px;width:100%;background:#e5ece7;position:relative}.map-placeholder{display:grid;place-items:center;text-align:center;color:#708d80;height:100%;padding:30px;font-weight:700}.map-legend{display:flex;gap:15px;flex-wrap:wrap;padding:18px 19px;color:#718275;font-size:10px;font-weight:700}.map-legend span{display:flex;align-items:center;gap:6px}.legend-dot{width:9px;height:9px;border-radius:50%;display:block}.legend-dot.best{background:#94c82b}.legend-dot.other{background:#337b4f}.legend-dot.none{background:#9ea9a2}.map-hint{display:flex;align-items:center;gap:8px;margin-top:13px;padding:0 8px;color:#8b9b90;font-size:11px;line-height:1.6}.map-hint>span{font-size:17px;color:#87aa77}.price-marker{padding:7px 10px;font:850 12px 'Outfit',sans-serif;color:#fff;background:#286647;border:2px solid #fff;border-radius:8px;white-space:nowrap;box-shadow:0 5px 13px #1c422445;position:relative;text-align:center}.price-marker:after{content:'';position:absolute;left:calc(50% - 5px);bottom:-6px;width:8px;height:8px;transform:rotate(45deg);background:inherit;border-right:2px solid #fff;border-bottom:2px solid #fff}.price-marker.best{background:#baf04f;color:#153526;z-index:1;border-color:#fff}.price-marker.none{background:#97aaa1;color:#fff}.price-marker.demo{background:#cc9e42}.map-popup h3{margin:0 0 5px;font:800 15px 'Outfit',sans-serif}.map-popup p{margin:0 0 8px;font-size:12px;color:#73877b}.map-popup strong{font-size:16px;color:#234d31}.map-popup a{display:block;margin-top:10px;color:#2c8155;text-decoration:none;font-weight:800}.loading-state,.empty-state{border:1px dashed #dae4d7;border-radius:16px;background:#fff;text-align:center;padding:65px 35px;color:#829588}.loading-spinner{width:30px;height:30px;border:3px solid #e5efdf;border-top-color:#79af4e;border-radius:50%;margin:0 auto 17px;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.loading-state h3,.empty-state h3{color:#2d4e37;font:800 20px 'Outfit',sans-serif;margin:0 0 8px}.loading-state p,.empty-state p{font-size:12px;line-height:1.7;margin:0 0 14px}.empty-state button{background:var(--ink);color:#fff;border:0;border-radius:9px;font-weight:800;padding:12px 17px}.trust-section{margin:49px 0 60px;background:#edf3eb;border:1px solid #e2ebdf;border-radius:15px;padding:20px 23px;display:flex;gap:13px;align-items:flex-start}.trust-icon{width:22px;height:22px;border:1.5px solid #7ba476;border-radius:50%;color:#477c51;display:grid;place-items:center;flex-shrink:0;font-family:serif;font-weight:bold}.trust-section p{font-size:12px;line-height:1.85;color:#66836d;margin:0}.trust-section strong{color:#355f3d}.trust-section button{border:0;background:transparent;text-decoration:underline;color:#3a7a46;font-weight:800;font-size:12px;padding:0}.site-footer{border-top:1px solid #e6ece3;background:#fff;padding:24px max(42px,calc((100vw - 1270px)/2));display:flex;align-items:center;justify-content:space-between;gap:20px;color:#85998c;font-size:11px;font-weight:700}.footer-brand{color:#253f2e;font-weight:850}.footer-logo{color:#74a43f}.footer-divider{margin:0 9px;color:#b5c5b9}.footer-links{display:flex;gap:18px;align-items:center}.footer-links a{text-decoration:underline}.footer-links button{border:0;background:none;color:#6b8d6d;font-weight:800;font-size:11px}.info-dialog{max-width:520px;width:calc(100% - 32px);border:1px solid #dbe5d7;border-radius:20px;box-shadow:0 18px 75px #0d241f50;padding:27px;color:#254333}.info-dialog::backdrop{background:rgba(15,34,27,.60)}.dialog-header{display:flex;justify-content:space-between;align-items:center}.dialog-icon{display:grid;place-items:center;border-radius:10px;background:#e7f3db;width:36px;height:36px;color:#508442;font-weight:900;font-size:17px}.dialog-header button{border:0;background:#eef4ed;border-radius:50%;width:31px;height:31px;font-size:22px;color:#527c56}.info-dialog h2{font:800 27px 'Outfit',sans-serif;letter-spacing:-.6px}.info-dialog p{font-size:13px;line-height:1.8;color:#687f6d}.info-dialog p strong{color:#385f44}.dialog-links a{color:#528744;font-weight:800;display:inline-block;margin:0 12px 8px 0}.dialog-close{background:var(--ink);color:#fff;border:0;border-radius:10px;padding:13px 19px;font-weight:800;margin-top:9px}
+@media(max-width:1100px){.hero-copy{padding-left:40px}.hero-aside{opacity:.85}.hero-graphic{transform:scale(.85)}.station-card{padding:15px}.controls-bar{gap:14px}.toggle-group{width:100%;min-height:24px}.hero h1{font-size:54px}.search-panel{width:min(540px,calc(100vw - 140px))}}
+@media(max-width:850px){.container,.hero{width:calc(100% - 36px)}.site-header{height:76px;padding:0 20px}.header-actions{gap:13px}.country{display:none}.status-chip{padding:10px}.nav-link span:not(.favorite-count){display:none}.hero{grid-template-columns:1fr;margin-top:18px;min-height:0}.hero-copy{padding:45px 35px 43px}.hero-aside{display:none}.hero h1{font-size:clamp(47px,8vw,66px)}.search-panel{width:100%;max-width:600px}.overview{padding-top:32px}.results-layout{grid-template-columns:1fr}.map-column{position:static;grid-row:1}.map-card #map{height:390px}.stats-grid{gap:10px}.stat-card{padding:18px}.stat-value>span{font-size:33px}.stat-top{font-size:9px}.controls-bar{flex-wrap:wrap}.control-group{min-width:140px}.site-footer{padding:26px 20px;flex-wrap:wrap}}
+@media(max-width:550px){.brand{font-size:19px;gap:8px}.brand-icon{width:38px;height:38px;border-radius:11px}.brand-icon svg{width:25px}.brand small{font-size:8px;letter-spacing:.6px}.header-actions{gap:6px}.status-chip{font-size:10px;gap:7px}.nav-link{padding:5px}.hero{border-radius:18px}.hero-copy{padding:35px 22px 32px}.eyebrow{font-size:8px;letter-spacing:1.1px}.hero h1{letter-spacing:-2.5px;font-size:46px}.hero-description{font-size:12px;line-height:1.7}.search-panel{height:59px;padding:5px}.search-panel input{font-size:12px}.search-icon{width:31px}.location-button{width:30px;margin-right:4px}.search-button{height:47px;padding:0 11px;font-size:11px}.search-button span{margin-left:2px}.quick-cities{gap:6px}.quick-cities>span{width:100%}.quick-cities button{padding:6px 9px}.filter-section{padding-top:26px}.fuel-tabs{gap:8px}.fuel-tab{padding:12px;font-size:11px;gap:5px}.fuel-tab small{font-size:9px}.overview-heading{display:block}.overview h2{font-size:27px}.update-pill{display:inline-flex;margin-top:15px;max-width:100%;white-space:normal;line-height:1.4}.stats-grid{grid-template-columns:1fr 1fr}.stats-grid>.stat-card:first-child{grid-column:1/-1;min-height:135px}.stat-card{min-height:125px;padding:17px}.stat-card p{font-size:10px;line-height:1.5}.stat-top{line-height:1.5}.stat-value>span{font-size:33px}.price-stat .stat-value>span{font-size:40px}.results-section{padding-top:36px}.controls-bar{padding:14px;gap:13px}.control-group,.control-group:nth-child(2){flex:1 1 calc(50% - 13px);min-width:130px}.tank-group{flex:1 1 calc(50% - 13px)}.select-wrap select{font-size:11px}.results-layout{margin-top:18px;gap:24px}.map-card #map{height:330px}.map-legend{padding:12px;gap:12px}.list-header h3{font-size:17px}.list-header p{font-size:10px}.station-name{font-size:16px}.station-logo{width:40px;height:40px}.station-top{gap:10px}.station-card{padding:16px}.all-prices{grid-template-columns:1fr 1fr}.trust-section{margin:37px 0;padding:16px}.site-footer{font-size:10px}.footer-links{flex-wrap:wrap;gap:8px 16px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+
+/* Plafonds légaux réels : isolés visuellement des tarifs à la pompe */
+.official-strip{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:20px 0 18px;padding:14px 20px;border-radius:16px;border:1px solid #d9e9e1;background:#f5fbf7;color:#123428;font-family:"DM Sans",sans-serif}
+.official-strip[hidden]{display:none}
+.official-copy{display:flex;align-items:center;gap:10px}
+.official-icon{font-size:20px}
+.official-copy strong{display:block;font-size:13px;font-weight:800}
+.official-copy small{display:block;font-size:11px;color:#6a7b72}
+.official-data{display:flex;gap:10px;flex-wrap:wrap}
+.official-data span{font-size:11px;border-radius:8px;padding:7px 10px;background:#e7f3ec;white-space:nowrap}
+.official-data b{font-weight:800;font-size:13px;margin-left:4px}
+.official-strip a{font-size:11px;color:#2b6d53;text-decoration:underline;text-underline-offset:2px}
+@media(max-width:640px){.official-strip{align-items:flex-start;padding:14px}.official-data{gap:6px}.official-data span{font-size:10px;padding:6px}}
+
+</style>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
+  <script>window.PLEINRADAR_STANDALONE_DEMO = false; window.PLEINRADAR_EMBEDDED_OFFICIAL = null;</script>
+<script defer>
+(() => {
+  'use strict';
+  const $ = (selector) => document.querySelector(selector);
+  const $$ = (selector) => [...document.querySelectorAll(selector)];
+  const FUEL_LABELS = {e10:'Essence 95 (E10)',e5_98:'Essence 98 (E5)',b7:'Diesel (B7)',b7_premium:'Diesel premium',lpg:'LPG',cng:'CNG'};
+  const CITIES = {
+    'ganshoren': {lat:50.8725,lon:4.3125,label:'Ganshoren'},
+    'bruxelles': {lat:50.8466,lon:4.3528,label:'Bruxelles'},
+    'brussels': {lat:50.8466,lon:4.3528,label:'Bruxelles'},
+    'jette': {lat:50.8786,lon:4.3252,label:'Jette'},
+    'liege': {lat:50.6326,lon:5.5797,label:'Liège'},
+    'liège': {lat:50.6326,lon:5.5797,label:'Liège'},
+    'anvers': {lat:51.2194,lon:4.4025,label:'Anvers'},
+    'antwerpen': {lat:51.2194,lon:4.4025,label:'Anvers'},
+    'charleroi': {lat:50.4108,lon:4.4446,label:'Charleroi'},
+    'namur': {lat:50.4669,lon:4.8675,label:'Namur'},
+    'mons': {lat:50.4542,lon:3.9523,label:'Mons'},
+    'bruges': {lat:51.2093,lon:3.2247,label:'Bruges'},
+    'gent': {lat:51.0543,lon:3.7174,label:'Gand'},
+    'gand': {lat:51.0543,lon:3.7174,label:'Gand'},
+    'wavre': {lat:50.7172,lon:4.6112,label:'Wavre'},
+    'uccle': {lat:50.8033,lon:4.3347,label:'Uccle'},
+    'anderlecht': {lat:50.8366,lon:4.3082,label:'Anderlecht'}
+  };
+  const state = {
+    center: {...CITIES.ganshoren},fuel:'e10',radius:10,sort:'price',tank:40,onlyPriced:false,
+    favoritesOnly:false,favorites:new Set(),stations:[],source:'',updatedAt:null,loaded:false,
+    demo:false,overpass:false,visible:8,selectedId:null,loading:false,official:null
+  };
+  let map=null, markerLayer=null, centerMarker=null;
+  const stationElements=new Map();
+  const markerElements=new Map();
+  const fuelUnit=fuel=>fuel==='cng'?'€/kg':'€/L';
+  const formatNumber=(v,n=2)=>Number(v).toLocaleString('fr-BE',{minimumFractionDigits:n,maximumFractionDigits:n});
+  const htmlSafe=(value='')=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
+  const validPrice=v=>Number.isFinite(Number(v))&&Number(v)>=.3&&Number(v)<=4.5;
+  const stationQuoteFresh=(s,fuel)=>{
+    const timestamp=s.priceUpdatedAtByFuel?.[fuel]||s.priceUpdatedAt;
+    if(!timestamp)return true; // data source without timestamps: display as indicative
+    const millis=Date.parse(timestamp);
+    return Number.isFinite(millis)&&Date.now()-millis>=-3600000&&Date.now()-millis<=48*3600000;
+  };
+  const priceOf=s=>stationQuoteFresh(s,state.fuel)&&validPrice(s.prices?.[state.fuel])?Number(s.prices[state.fuel]):null;
+  const kmBetween=(a,b)=>{const R=6371,toRad=d=>d*Math.PI/180;const dLat=toRad(b.lat-a.lat),dLon=toRad(b.lon-a.lon);const x=Math.sin(dLat/2)**2+Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLon/2)**2;return 2*R*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));};
+  const routeUrl=s=>`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${s.lat},${s.lon}`)}`;
+  const svgPin='<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s7-6.8 7-12a7 7 0 10-14 0c0 5.2 7 12 7 12Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="9" r="2.4" stroke="currentColor" stroke-width="1.8"/></svg>';
+  const svgHeart='<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 00-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 000-7.8Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  function notify(message,type='info'){
+    const el=$('#notification');el.textContent=message;el.className=`notification ${type==='info'?'':type}`;el.hidden=false;
+  }
+  function dismiss(){ $('#notification').hidden=true; }
+  function saveFavorites(){try{localStorage.setItem('pleinradar-favorites',JSON.stringify([...state.favorites]));}catch(e){} $('#fav-count').textContent=state.favorites.size;$('#fav-count').hidden=state.favorites.size===0;}
+  function readFavorites(){try{const saved=JSON.parse(localStorage.getItem('pleinradar-favorites')||'[]');if(Array.isArray(saved))state.favorites=new Set(saved.map(String).slice(0,200));}catch(e){}saveFavorites();}
+  function normalizeData(raw){
+    if(!raw||!Array.isArray(raw.stations))throw new Error('Fichier de données incorrect');
+    return raw.stations.filter(s=>Number.isFinite(Number(s.lat))&&Number.isFinite(Number(s.lon))&&s.lat>=49&&s.lat<=52&&s.lon>=2&&s.lon<=7).map(s=>({
+      id:String(s.id||`${s.lat}-${s.lon}`),name:String(s.name||s.brand||'Station-service'),brand:String(s.brand||''),address:String(s.address||''),city:String(s.city||''),postalCode:String(s.postalCode||''),lat:Number(s.lat),lon:Number(s.lon),prices:typeof s.prices==='object'&&s.prices?s.prices:{},priceUpdatedAt:s.priceUpdatedAt||null,priceUpdatedAtByFuel:s.priceUpdatedAtByFuel||{}
+    }));
+  }
+  async function loadOfficial(){
+    try{
+      const resp=window.PLEINRADAR_EMBEDDED_OFFICIAL?null:await fetch(`data/official.json?v=${Date.now()}`,{cache:'no-store'});
+      if(resp&&!resp.ok)throw new Error('Plafonds officiels indisponibles');
+      const data=window.PLEINRADAR_EMBEDDED_OFFICIAL||(await resp.json());
+      if(!data||!data.prices)throw new Error('Fichier officiel incorrect');
+      if(!['e10','e5_98','b7'].some(fuel=>validPrice(data.prices[fuel])))throw new Error('Plafonds non vérifiés');
+      state.official=data;
+      for(const fuel of ['e10','e5_98','b7']){
+        const value=data.prices[fuel];
+        const el=$(`#official-${fuel}`);
+        el.textContent=validPrice(value)?`${formatNumber(value,3)} ${fuelUnit(fuel)}`:'—';
+      }
+      const date=data.effectiveDate||data.retrievedAt;
+      $('#official-date').textContent=date?`relevé ${new Date(date).toLocaleDateString('fr-BE')}`:'Statbel';
+      $('#official-source').href='https://statbel.fgov.be/fr/themes/energie/prix-du-petrole';
+      $('#official-strip').hidden=false;
+    }catch(err){console.warn('Plafonds légaux:',err);$('#official-strip').hidden=true;}
+  }
+  async function fetchData(){
+    state.loading=true;showLoading();
+    try{
+      const result=await fetch(`data/stations.json?v=${Date.now()}`,{cache:'no-store'});
+      if(!result.ok)throw new Error(`Données indisponibles (${result.status})`);
+      const data=await result.json();
+      state.stations=normalizeData(data);state.source=String(data.source||'Fichier de données');state.updatedAt=data.updatedAt||null;state.overpass=false;state.demo=false;
+      state.loaded=state.stations.length>0;
+      if(!state.loaded){await loadOSM();return;}
+      dismiss();
+      const age=state.updatedAt?Date.now()-new Date(state.updatedAt).getTime():Infinity;
+      if(!Number.isFinite(age)||age>48*3600e3)notify('Les derniers prix téléchargés datent de plus de 48 heures. Vérifie le tarif à la pompe.','warning');
+    }catch(err){console.warn('Lecture des prix :',err);await loadOSM();}
+    finally{state.loading=false;render();}
+  }
+  async function loadOSM(){
+    // OpenStreetMap lists actual station locations, not their pump prices.
+    state.overpass=true;state.source='OpenStreetMap — positions uniquement';state.updatedAt=null;state.loaded=false;
+    try{
+      const distance=Math.round(state.radius*1000);
+      const query=`[out:json][timeout:25];(node["amenity"="fuel"](around:${distance},${state.center.lat},${state.center.lon});way["amenity"="fuel"](around:${distance},${state.center.lat},${state.center.lon}););out center 350;`;
+      const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),16000);
+      let response;
+      try{response=await fetch(`https://overpass.kumi.systems/api/interpreter?data=${encodeURIComponent(query)}`,{signal:controller.signal});}
+      finally{clearTimeout(timer);}
+      if(!response.ok)throw new Error('Service cartographique temporairement indisponible');
+      const result=await response.json();
+      const items=result.elements||[];
+      state.stations=items.map(e=>{
+        const t=e.tags||{};const lat=Number(e.lat??e.center?.lat),lon=Number(e.lon??e.center?.lon);
+        return {id:`osm-${e.type}-${e.id}`,name:t.name||t.brand||t.operator||'Station-service',brand:t.brand||'',address:[t['addr:street'],t['addr:housenumber']].filter(Boolean).join(' '),city:t['addr:city']||'',postalCode:t['addr:postcode']||'',lat,lon,prices:{}};
+      }).filter(s=>Number.isFinite(s.lat)&&Number.isFinite(s.lon));
+      notify('Stations actualisées depuis OpenStreetMap. Les prix par station ne sont pas disponibles pour le moment. Vérifie la mise à jour automatique.','warning');
+    }catch(e){state.stations=[];notify('Impossible de charger les prix ou les stations. Vérifie ta connexion, puis actualise la page.','error');}
+  }
+  function getResults(){
+    const nearby=state.stations.map(s=>({...s,distance:kmBetween(state.center,s)})).filter(s=>s.distance<=state.radius).sort((a,b)=>a.distance-b.distance);
+    const available=nearby.map(priceOf).filter(p=>p!==null);const best=available.length?Math.min(...available):null;const highest=available.length?Math.max(...available):null;
+    let filtered=nearby.filter(s=>(!state.onlyPriced||priceOf(s)!==null)&&(!state.favoritesOnly||state.favorites.has(s.id)));
+    if(state.sort==='price')filtered.sort((a,b)=>(priceOf(a)??Infinity)-(priceOf(b)??Infinity)||a.distance-b.distance);
+    if(state.sort==='distance')filtered.sort((a,b)=>a.distance-b.distance);
+    if(state.sort==='brand')filtered.sort((a,b)=>a.name.localeCompare(b.name,'fr')||a.distance-b.distance);
+    return {nearby,filtered,best,highest,priced:available.length};
+  }
+  function updateStats(result){
+    $('#city-title').textContent=state.center.label;$('#stat-radius').textContent=state.radius;$('#stat-tank').textContent=state.tank;
+    $('#stat-total').textContent=String(result.nearby.length);
+    $('#stat-price').textContent=result.best!==null?formatNumber(result.best,3):'—';$('#stat-price-unit').textContent=fuelUnit(state.fuel);
+    const bestStation=result.nearby.filter(s=>priceOf(s)===result.best).sort((a,b)=>a.distance-b.distance)[0];
+    $('#stat-best-name').textContent=bestStation?(state.demo?'Démo · Prix fictif':bestStation.name):'Aucun prix disponible pour ce carburant';
+    $('#stat-save').textContent=result.priced>=2&&result.highest>result.best?formatNumber((result.highest-result.best)*state.tank,2):'—';
+    const date=state.updatedAt?new Date(state.updatedAt):null;
+    let msg='Prix indisponibles';
+    if(state.demo)msg='Mode démonstration · Prix fictifs';
+    else if(state.overpass)msg='Stations OpenStreetMap · Sans prix';
+    else if(date&&!Number.isNaN(date.getTime()))msg=`${state.source} · ${date.toLocaleString('fr-BE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Brussels'})}`;
+    $('#updated-text').textContent=msg;
+  }
+  function stationCard(s,idx,best){
+    const price=priceOf(s),isBest=price!==null&&price===best;
+    const fav=state.favorites.has(s.id);
+    const initial=s.name.replace(/^(station[- ]?service|station)\s*/i,'').trim().split(/\s+/).slice(0,2).map(v=>v[0]||'').join('').toUpperCase().slice(0,2)||'⛽';
+    const address=[s.address,[s.postalCode,s.city].filter(Boolean).join(' ')].filter(Boolean).join(' · ')||'Adresse non renseignée';
+    const all=Object.entries(FUEL_LABELS).map(([key,label])=>{const value=stationQuoteFresh(s,key)&&validPrice(s.prices[key])?Number(s.prices[key]):null;return `<div class="grade-chip ${value===null?'no-price':''}"><span>${htmlSafe(label)}</span><strong>${value!==null?`${formatNumber(value,3)} ${fuelUnit(key)}`:'—'}</strong></div>`;}).join('');
+    const driving=state.demo?'':`<a class="route-button" href="${routeUrl(s)}" target="_blank" rel="noopener noreferrer" aria-label="Itinéraire vers ${htmlSafe(s.name)}">Itinéraire ↗</a>`;
+    return `<article class="station-card ${isBest?'is-best':''} ${state.selectedId===s.id?'is-selected':''}" data-id="${htmlSafe(s.id)}">
+      <div class="station-top"><div class="station-logo">${htmlSafe(initial)}</div><div class="station-details"><h4 class="station-name">${htmlSafe(s.name)} ${isBest?'<span class="best-badge">MEILLEUR PRIX</span>':''} ${state.demo?'<span class="best-badge demo-badge">DÉMO</span>':''}</h4><div class="station-address">${htmlSafe(address)}</div></div><span class="station-distance">${svgPin} ${formatNumber(s.distance,1)} km</span></div>
+      <div class="station-price-row"><div><div class="station-price ${price===null?'unknown':''}">${price===null?'Prix non renseigné':`${formatNumber(price,3)} <span>${fuelUnit(state.fuel)}</span>`}</div><div class="station-price-caption">${price===null?'Aucune estimation affichée':state.demo?'Prix fictif · Démonstration':`Prix indicatif · ${s.priceUpdatedAtByFuel?.[state.fuel]||s.priceUpdatedAt?`importé ${new Date(s.priceUpdatedAtByFuel?.[state.fuel]||s.priceUpdatedAt).toLocaleDateString('fr-BE')}`:state.source} · à confirmer`}</div></div><div class="station-tank"><strong>${price!==null?formatNumber(price*state.tank,2)+' €':'—'}</strong><span>Pour ${state.tank} litres</span></div></div>
+      <div class="station-actions">${driving}<button class="detail-button" type="button" data-action="details" aria-expanded="false">Tous les prix ↓</button><button class="star-button ${fav?'is-favorite':''}" type="button" data-action="favorite" title="${fav?'Retirer des favoris':'Ajouter aux favoris'}" aria-label="${fav?'Retirer des favoris':'Ajouter aux favoris'}" aria-pressed="${fav}">${svgHeart}</button></div><div class="all-prices" hidden>${all}</div></article>`;
+  }
+  function renderCards(result){
+    const total=result.filtered.length;$('#list-count').textContent=total;
+    $('#list-subtitle').textContent=state.favoritesOnly?'Tes stations enregistrées':state.sort==='price'?'Prix les plus bas en premier (prix inconnus à la fin)':state.sort==='distance'?'Les plus proches en premier':'Classement par nom';
+    const shown=result.filtered.slice(0,state.visible);
+    const list=$('#station-list');
+    if(!shown.length){
+      let title='Aucune station correspondante',desc='Essaie un rayon plus large ou un autre carburant.';
+      if(!state.stations.length){title='Les prix ne sont pas encore connectés';desc='Les prix réels seront affichés après la première importation des données. Tu peux explorer une version de démonstration avec des prix clairement fictifs.';}
+      if(state.favoritesOnly){title='Aucun favori dans cette zone';desc='Enregistre des stations avec le cœur pour les retrouver ici.';}
+      if(state.onlyPriced&&result.nearby.length){title='Pas de prix pour ce carburant';desc='Les stations existent, mais aucune ne dispose d’un prix utilisable dans les données actuelles. Désactive « Prix connus uniquement ».';}
+      list.innerHTML=`<div class="empty-state"><h3>${title}</h3><p>${desc}</p>${!state.stations.length?'<button type="button" data-action="demo">Voir une démonstration (prix fictifs) ↗</button>':''}</div>`;
+    }else{list.innerHTML=shown.map((s,i)=>stationCard(s,i,result.best)).join('');}
+    $('#show-more-wrap').hidden=total<=state.visible;
+    $('#show-more').textContent=`Afficher ${Math.min(8,total-state.visible)} stations de plus ↓`;
+  }
+  function initMap(){
+    if(!window.L)return false;
+    if(map)return true;
+    $('#map').innerHTML='';
+    map=L.map('map',{zoomControl:false,scrollWheelZoom:false}).setView([state.center.lat,state.center.lon],12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+    L.control.zoom({position:'bottomright'}).addTo(map);
+    markerLayer=L.layerGroup().addTo(map);
+    setTimeout(()=>map.invalidateSize(),80);
+    return true;
+  }
+  function renderMap(result){
+    if(!initMap()){$('#map').innerHTML='<div class="map-placeholder">Carte indisponible : vérifie ta connexion internet.</div>';return;}
+    markerLayer.clearLayers();markerElements.clear();
+    if(centerMarker)map.removeLayer(centerMarker);
+    centerMarker=L.circleMarker([state.center.lat,state.center.lon],{radius:8,color:'#fff',weight:3,fillColor:'#234f71',fillOpacity:1}).addTo(map).bindTooltip('Centre de recherche',{direction:'top'});
+    const stations=result.filtered.slice(0,500);
+    const bounds=L.latLngBounds([[state.center.lat,state.center.lon]]);
+    for(const s of stations){
+      const price=priceOf(s),isBest=price!==null&&price===result.best;
+      const markerLabel=price===null?'—':formatNumber(price,3);
+      const color=state.demo?'demo':price===null?'none':isBest?'best':'';
+      const icon=L.divIcon({className:'',html:`<div class="price-marker ${color}">${markerLabel}</div>`,iconSize:[72,36],iconAnchor:[36,43]});
+      const marker=L.marker([s.lat,s.lon],{icon,title:s.name}).addTo(markerLayer);
+      marker.bindPopup(`<div class="map-popup"><h3>${htmlSafe(s.name)}</h3><p>${htmlSafe(s.address||s.city||'Station-service')}</p><strong>${price!==null?`${formatNumber(price,3)} ${fuelUnit(state.fuel)}`:'Prix non renseigné'}</strong>${state.demo?'':`<a href="${routeUrl(s)}" target="_blank" rel="noopener noreferrer">Calculer l’itinéraire ↗</a>`}</div>`,{maxWidth:240});
+      marker.on('click',()=>{state.selectedId=s.id;$$('.station-card').forEach(card=>card.classList.toggle('is-selected',card.dataset.id===s.id));});
+      markerElements.set(s.id,marker);bounds.extend([s.lat,s.lon]);
+    }
+    $('#map-count').textContent=`${stations.length} points`;
+    if(stations.length){map.fitBounds(bounds.pad(.11),{maxZoom:14,animate:false});}
+    else{map.setView([state.center.lat,state.center.lon],11,{animate:false});}
+    setTimeout(()=>map.invalidateSize(),40);
+  }
+  function render(){
+    if(state.loading)return;
+    const result=getResults();updateStats(result);renderCards(result);renderMap(result);
+    $('#btn-favorites').classList.toggle('active',state.favoritesOnly);
+    $('#btn-favorites').title=state.favoritesOnly?'Afficher toutes les stations':'Afficher mes favoris';
+  }
+  function showLoading(){ $('#station-list').innerHTML='<div class="loading-state"><div class="loading-spinner"></div><h3>Recherche des stations…</h3><p>Préparation du comparatif</p></div>'; }
+  async function geocodeCity(input){
+    const value=input.trim(),normalized=value.toLocaleLowerCase('fr').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const known=Object.entries(CITIES).find(([key])=>key.normalize('NFD').replace(/[\u0300-\u036f]/g,'')===normalized);
+    if(known)return {...known[1]};
+    const url=`https://photon.komoot.io/api/?q=${encodeURIComponent(value+', Belgique')}&limit=8&bbox=2.4,49.4,6.55,51.6&lang=fr`;
+    const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),9000);
+    try{
+      const resp=await fetch(url,{signal:controller.signal});if(!resp.ok)throw new Error('Service de recherche indisponible');
+      const result=await resp.json();const items=(result.features||[]).filter(f=>f.properties?.countrycode?.toLowerCase()==='be');
+      if(!items.length)throw new Error('Cette localité est introuvable en Belgique.');
+      const p=items[0],coordinates=p.geometry?.coordinates;
+      if(!coordinates||coordinates.length<2)throw new Error('Coordonnées manquantes');
+      return {lat:coordinates[1],lon:coordinates[0],label:p.properties.city||p.properties.name||value};
+    }finally{clearTimeout(timeout);}
+  }
+  async function searchCity(city){
+    if(state.loading)return;
+    const submit=$('#btn-search');submit.disabled=true;submit.textContent='Recherche…';
+    try{
+      const center=await geocodeCity(city);state.center=center;state.visible=8;state.selectedId=null;state.favoritesOnly=false;
+      $('#city-input').value=center.label;
+      if(state.overpass){state.loading=true;showLoading();await loadOSM();state.loading=false;}
+      dismissIfNoWarning();render();
+      $('#resultats').scrollIntoView({behavior:'smooth',block:'start'});
+    }catch(err){notify(err.message||'La ville n’a pas pu être trouvée. Réessaie.','error');}
+    finally{submit.disabled=false;submit.innerHTML='Rechercher <span aria-hidden="true">↗</span>';}
+  }
+  function dismissIfNoWarning(){if(!state.overpass&&!state.demo) dismiss();}
+  function useLocation(){
+    if(!navigator.geolocation){notify('La localisation n’est pas disponible sur ce navigateur.','error');return;}
+    $('#btn-geolocate').disabled=true;
+    navigator.geolocation.getCurrentPosition(async pos=>{
+      $('#btn-geolocate').disabled=false;
+      state.center={lat:pos.coords.latitude,lon:pos.coords.longitude,label:'ma position'};$('#city-input').value='Ma position';state.visible=8;
+      if(state.overpass){state.loading=true;showLoading();await loadOSM();state.loading=false;}
+      render();$('#resultats').scrollIntoView({behavior:'smooth'});
+    },()=>{ $('#btn-geolocate').disabled=false;notify('Accès à la position refusé ou indisponible. Saisis une ville à la place.','warning');},{enableHighAccuracy:false,timeout:11000,maximumAge:60000});
+  }
+  function createDemo(){
+    state.demo=true;state.overpass=false;state.loaded=true;state.source='Démonstration fictive';state.updatedAt=null;
+    state.center={...CITIES.ganshoren};$('#city-input').value='Ganshoren';
+    const points=[[50.8702,4.3238],[50.8757,4.2985],[50.8805,4.3364],[50.8641,4.3148],[50.8617,4.2868],[50.8893,4.3184],[50.8549,4.3441],[50.8684,4.363],[50.883,4.276],[50.8421,4.3081],[50.8634,4.3821],[50.891,4.351]];
+    state.stations=points.map(([lat,lon],i)=>({id:`demo-${i+1}`,name:`Station Démo ${String(i+1).padStart(2,'0')}`,brand:'DEMO',address:'Emplacement fictif',city:'Bruxelles',postalCode:'',lat,lon,prices:{e10:1.51+((i*7)%12)*.017,e5_98:1.7+((i*5)%11)*.023,b7:1.59+((i*3)%10)*.019,b7_premium:1.72+((i*9)%10)*.024,lpg:i%3===0?null:.69+((i*3)%6)*.031,cng:i%3===0?1.35+((i*5)%7)*.07:null}}));
+    notify('Mode démonstration : toutes les stations et tous les prix affichés sont fictifs. Aucun tarif réel n’est présenté.','warning');
+    render();
+  }
+  function bindEvents(){
+    $('#search-form').addEventListener('submit',event=>{event.preventDefault();searchCity($('#city-input').value);});
+    $$('.quick-cities button').forEach(btn=>btn.addEventListener('click',()=>searchCity(btn.dataset.city)));
+    $('#btn-geolocate').addEventListener('click',useLocation);
+    $('#fuel-tabs').addEventListener('click',event=>{
+      const btn=event.target.closest('[data-fuel]');if(!btn)return;state.fuel=btn.dataset.fuel;state.visible=8;
+      $$('.fuel-tab').forEach(tab=>{tab.classList.toggle('active',tab===btn);tab.setAttribute('aria-pressed',String(tab===btn));});render();
+    });
+    $('#radius-select').addEventListener('change',async event=>{state.radius=Number(event.target.value);state.visible=8;if(state.overpass){state.loading=true;showLoading();await loadOSM();state.loading=false;}render();});
+    $('#sort-select').addEventListener('change',event=>{state.sort=event.target.value;render();});
+    $('#tank-input').addEventListener('input',event=>{const n=Number(event.target.value);if(Number.isFinite(n)&&n>=1&&n<=200){state.tank=n;render();}});
+    $('#only-priced').addEventListener('change',event=>{state.onlyPriced=event.target.checked;state.visible=8;render();});
+    $('#btn-favorites').addEventListener('click',()=>{state.favoritesOnly=!state.favoritesOnly;state.visible=8;render();$('#resultats').scrollIntoView({behavior:'smooth'});});
+    $('#btn-refresh').addEventListener('click',async()=>{dismiss();await fetchData();});
+    $('#show-more').addEventListener('click',()=>{state.visible+=8;renderCards(getResults());});
+    $('#station-list').addEventListener('click',event=>{
+      const button=event.target.closest('[data-action]');if(!button)return;
+      if(button.dataset.action==='demo'){createDemo();return;}
+      const card=button.closest('.station-card');if(!card)return;const id=card.dataset.id;
+      if(button.dataset.action==='favorite'){if(state.favorites.has(id))state.favorites.delete(id);else state.favorites.add(id);saveFavorites();render();}
+      if(button.dataset.action==='details'){const details=card.querySelector('.all-prices'),expanded=!details.hidden;details.hidden=expanded;button.setAttribute('aria-expanded',String(!expanded));button.textContent=expanded?'Tous les prix ↓':'Masquer les prix ↑';}
+    });
+    $('#station-list').addEventListener('click',event=>{
+      if(event.target.closest('button,a'))return;const card=event.target.closest('.station-card');if(!card)return;
+      state.selectedId=card.dataset.id;
+      $$('.station-card').forEach(c=>c.classList.toggle('is-selected',c.dataset.id===card.dataset.id));
+      const marker=markerElements.get(card.dataset.id);if(marker&&map){map.panTo(marker.getLatLng());marker.openPopup();}
+    });
+    const dialog=$('#info-dialog');
+    ['#btn-about','#btn-methodology','#footer-about'].forEach(sel=>$(sel).addEventListener('click',()=>dialog.showModal()));
+    ['#close-dialog','#dialog-okay'].forEach(sel=>$(sel).addEventListener('click',()=>dialog.close()));
+    dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
+  }
+  function start(){readFavorites();bindEvents();loadOfficial();const query=new URLSearchParams(location.search);if(query.get('demo')==='1'||window.PLEINRADAR_STANDALONE_DEMO===true){createDemo();return;}fetchData();setInterval(()=>{if(!state.loading&&state.loaded&&!state.demo)fetchData();},5*60*1000);}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+})();
+
+</script>
+</head>
+<body>
+  <a class="skip-link" href="#resultats">Passer aux résultats</a>
+  <div class="app-shell">
+    <header class="site-header">
+      <a href="./" class="brand" aria-label="PleinRadar, accueil">
+        <span class="brand-icon"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M8 6.5h12a2 2 0 012 2V28H6V8.5a2 2 0 012-2Z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M9 10h10v8H9v-8Z" fill="currentColor" opacity=".75"/><path d="M22 12h2l3 4v7c0 2.4-3 2.4-3 0v-3" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 28h19" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span>
+        <span>Plein<span class="brand-accent">Radar</span><small>Le plein malin</small></span>
+      </a>
+      <nav class="header-actions" aria-label="Navigation principale">
+        <span class="country"><span class="flag">🇧🇪</span> Belgique</span>
+        <button class="nav-link" id="btn-favorites" type="button"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 00-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 000-7.8Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Favoris</span><span class="favorite-count" id="fav-count" hidden>0</span></button>
+        <button class="status-chip" id="btn-about" type="button"><span class="status-dot"></span> <span>Source des prix</span><span class="arrow-down">↗</span></button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-orbit one"></div><div class="hero-orbit two"></div>
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="eyebrow-star">✳</span> LE COMPARATEUR CARBURANT EN BELGIQUE</p>
+          <h1 id="hero-title">Le bon plein.<br><span>Au bon prix.</span></h1>
+          <p class="hero-description">Toutes les stations près de toi, un seul endroit pour comparer. Trouve la meilleure option avant de prendre la route.</p>
+          <form class="search-panel" id="search-form">
+            <span class="search-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="6.8" stroke="currentColor" stroke-width="2"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+            <label class="sr-only" for="city-input">Ville ou code postal en Belgique</label>
+            <input id="city-input" type="search" name="city" value="Ganshoren" placeholder="Une ville ou un code postal..." autocomplete="address-level2" required />
+            <button class="location-button" id="btn-geolocate" type="button" title="Utiliser ma position" aria-label="Utiliser ma position"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2v3m0 14v3M2 12h3m14 0h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="6.6" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.4" fill="currentColor"/></svg></button>
+            <button class="search-button" id="btn-search" type="submit">Rechercher <span aria-hidden="true">↗</span></button>
+          </form>
+          <div class="quick-cities"><span>Recherches rapides :</span><button type="button" data-city="Bruxelles">Bruxelles</button><button type="button" data-city="Ganshoren">Ganshoren</button><button type="button" data-city="Liège">Liège</button><button type="button" data-city="Anvers">Anvers</button></div>
+        </div>
+        <div class="hero-aside" aria-hidden="true">
+          <div class="hero-graphic">
+            <div class="graphic-ring ring-a"></div><div class="graphic-ring ring-b"></div>
+            <div class="graphic-pump"><svg viewBox="0 0 128 164" fill="none"><rect x="22" y="25" width="76" height="113" rx="13" fill="#D5FF6C"/><rect x="31" y="38" width="58" height="42" rx="5" fill="#123125"/><path d="M38 66V50h16l-7 17h19" stroke="#D5FF6C" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><rect x="42" y="96" width="37" height="7" rx="3.5" fill="#123125" opacity=".5"/><rect x="42" y="113" width="26" height="7" rx="3.5" fill="#123125" opacity=".5"/><path d="M98 45h9l10 21v47c0 20-26 20-26 0V94" stroke="#D5FF6C" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 138h98" stroke="#D5FF6C" stroke-width="8" stroke-linecap="round"/></svg></div>
+            <div class="floating-label label-top">€ <span>Des prix comparés</span></div>
+            <div class="floating-label label-bottom"><span class="floating-check">✓</span> Un choix plus malin</div>
+          </div>
+        </div>
+      </section>
+
+      <div class="container">
+        <div id="notification" class="notification" role="status" aria-live="polite" hidden></div>
+        <section class="official-strip" id="official-strip" hidden aria-label="Prix maximums légaux en Belgique">
+          <div class="official-copy"><span class="official-icon">🇧🇪</span><div><strong>Prix maximaux officiels</strong><small>Ce ne sont PAS les prix pratiqués par les stations.</small></div></div>
+          <div class="official-data"><span>95 E10 <b id="official-e10">—</b></span><span>98 E5 <b id="official-e5_98">—</b></span><span>Diesel B7 <b id="official-b7">—</b></span></div>
+          <a id="official-source" href="https://statbel.fgov.be/fr/themes/energie/prix-du-petrole" target="_blank" rel="noopener noreferrer">Source · <span id="official-date">Statbel</span> ↗</a>
+        </section>
+        <section class="filter-section" aria-label="Filtres de carburant">
+          <div class="section-label"><span class="section-label-icon">↗</span><span>01. CHOISIS TON CARBURANT</span></div>
+          <div class="fuel-tabs" id="fuel-tabs" role="group" aria-label="Carburant">
+            <button class="fuel-tab active" data-fuel="e10" type="button" aria-pressed="true"><span class="fuel-drop">◉</span> Essence 95 <small>E10</small></button>
+            <button class="fuel-tab" data-fuel="e5_98" type="button" aria-pressed="false"><span class="fuel-drop">◉</span> Essence 98 <small>E5</small></button>
+            <button class="fuel-tab" data-fuel="b7" type="button" aria-pressed="false"><span class="fuel-drop">◉</span> Diesel <small>B7</small></button>
+            <button class="fuel-tab" data-fuel="b7_premium" type="button" aria-pressed="false"><span class="fuel-drop">◉</span> Diesel+ <small>Premium</small></button>
+            <button class="fuel-tab" data-fuel="lpg" type="button" aria-pressed="false"><span class="fuel-drop">◉</span> LPG</button>
+            <button class="fuel-tab" data-fuel="cng" type="button" aria-pressed="false"><span class="fuel-drop">◉</span> CNG</button>
+          </div>
+        </section>
+
+        <section class="overview" aria-label="Vue d'ensemble">
+          <div class="overview-heading">
+            <div><p class="section-kicker">TON COMPARATIF</p><h2>Autour de <span id="city-title">Ganshoren</span><span class="city-title-dot">.</span></h2><p class="overview-description">Trouve une station adaptée à ton trajet et à ton budget.</p></div>
+            <div class="update-pill"><span class="pulse-dot"></span><span id="updated-text">Chargement des données…</span></div>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card price-stat"><div class="stat-top"><span>LE PRIX LE PLUS BAS</span><span class="stat-icon">↘</span></div><div class="stat-value"><span id="stat-price">—</span><small id="stat-price-unit">€/L</small></div><p id="stat-best-name">En attente des prix disponibles</p></div>
+            <div class="stat-card"><div class="stat-top"><span>STATIONS TROUVÉES</span><span class="stat-icon muted">◎</span></div><div class="stat-value"><span id="stat-total">—</span></div><p>Dans un rayon de <span id="stat-radius">10</span> km</p></div>
+            <div class="stat-card savings-stat"><div class="stat-top"><span>ÉCONOMIES POTENTIELLES</span><span class="stat-icon muted">✳</span></div><div class="stat-value"><span id="stat-save">—</span><small>€</small></div><p>Sur <span id="stat-tank">40</span> L · entre prix mini et maxi affichés</p></div>
+          </div>
+        </section>
+
+        <section class="results-section" id="resultats" aria-label="Stations-service à proximité">
+          <div class="section-label results-label"><span class="section-label-icon">↗</span><span>02. COMPARE LES STATIONS</span></div>
+          <div class="controls-bar">
+            <div class="control-group"><label for="radius-select">Rayon de recherche</label><div class="select-wrap"><select id="radius-select"><option value="3">3 km</option><option value="5">5 km</option><option value="10" selected>10 km</option><option value="15">15 km</option><option value="25">25 km</option></select><span>⌄</span></div></div>
+            <div class="control-group"><label for="sort-select">Trier les résultats</label><div class="select-wrap"><select id="sort-select"><option value="price">Prix : moins cher d’abord</option><option value="distance">Distance : plus proche d’abord</option><option value="brand">Enseigne : A à Z</option></select><span>⌄</span></div></div>
+            <div class="control-group tank-group"><label for="tank-input">Mon plein</label><div class="tank-wrap"><input id="tank-input" type="number" min="1" max="200" step="1" value="40" aria-label="Nombre de litres pour le plein" /><span>litres</span></div></div>
+            <label class="toggle-group"><input id="only-priced" type="checkbox" /><span class="toggle-slider"></span><span>Prix connus uniquement</span></label>
+          </div>
+          <div class="results-layout">
+            <div class="station-column"><div class="list-header"><div><h3>Les stations à proximité <span id="list-count">0</span></h3><p id="list-subtitle">Triées selon ton choix</p></div><button type="button" class="refresh-link" id="btn-refresh"><span>↻</span> Actualiser</button></div><div class="station-list" id="station-list"><div class="loading-state"><div class="loading-spinner"></div><h3>Recherche des stations…</h3><p>Préparation du comparatif</p></div></div><div id="show-more-wrap" class="show-more-wrap" hidden><button id="show-more" type="button">Afficher plus de stations ↓</button></div></div>
+            <aside class="map-column" aria-label="Carte des stations"><div class="map-card"><div class="map-heading"><div><span class="map-heading-pin">◉</span><strong>Carte des stations</strong></div><span id="map-count">0 points</span></div><div id="map" role="application" aria-label="Carte interactive des stations-service"><div class="map-placeholder">La carte est en cours de chargement…</div></div><div class="map-legend"><span><i class="legend-dot best"></i> Meilleur prix</span><span><i class="legend-dot other"></i> Prix connu</span><span><i class="legend-dot none"></i> Prix inconnu</span></div></div><div class="map-hint"><span>✦</span> Les distances sont calculées à vol d'oiseau, pas selon le trajet routier.</div></aside>
+          </div>
+        </section>
+        <section class="trust-section" aria-label="Informations importantes"><span class="trust-icon">i</span><p><strong>Bien comparer, c'est aussi connaître la source.</strong> Les prix à la pompe peuvent changer et toutes les stations ne remontent pas leurs tarifs. Les maxima officiels ci-dessus ne sont pas les prix des stations. Vérifie le tarif affiché avant de faire ton plein. <button id="btn-methodology" type="button">D'où viennent les prix ? ↗</button></p></section>
+      </div>
+    </main>
+    <footer class="site-footer"><div class="footer-brand"><span class="footer-logo">✳</span> PleinRadar <span class="footer-divider">/</span> Fais le plein, pas les frais.</div><div class="footer-links"><span>Fait pour la Belgique 🇧🇪</span><span>Carte © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a></span><button type="button" id="footer-about">Données et transparence</button></div></footer>
+  </div>
+  <dialog id="info-dialog" class="info-dialog" aria-labelledby="info-title"><div class="dialog-header"><span class="dialog-icon">i</span><button id="close-dialog" type="button" aria-label="Fermer">×</button></div><h2 id="info-title">Comment fonctionnent les prix ?</h2><p><strong>La carte et les comparaisons utilisent les stations et tarifs présents dans le fichier de données actualisé du site.</strong> Les tarifs indicatifs sont importés par GitHub Actions depuis Pumperly (ANWB pour la Belgique), normalement toutes les six heures. Leur disponibilité dépend de la source. La couverture dépend du fournisseur. Les prix affichés ne sont pas garantis en temps réel à la pompe.</p><p>La date de mise à jour du site est différente de l'heure à laquelle le pompiste a changé son tarif. Aucun prix inconnu n'est estimé ni inventé.</p><p>Les prix maximums publiés par le SPF Économie belge sont des plafonds et non les prix pratiqués dans chaque station. Pour les prix tiers, vérifier les conditions de réutilisation avant une publication commerciale.</p><p class="dialog-links"><a href="https://economie.fgov.be/fr/themes/energie/prix-de-lenergie/prix-maximum-des-produits/tarif-officiel-des-produits" target="_blank" rel="noopener noreferrer">Voir les tarifs officiels belges ↗</a> <a href="https://pumperly.com/" target="_blank" rel="noopener noreferrer">Pumperly / ANWB — source indicative ↗</a></p><button class="dialog-close" type="button" id="dialog-okay">Compris</button></dialog>
+</body>
+</html>

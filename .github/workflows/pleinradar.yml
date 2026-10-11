@@ -1,0 +1,63 @@
+name: PleinRadar - prix carburant (6h)
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */6 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'pleinradar/**'
+      - '.github/workflows/pleinradar.yml'
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: pleinradar-deploy
+  cancel-in-progress: false
+jobs:
+  actualiser-et-publier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Importer les prix Pumperly BE (sans cle API)
+        id: import
+        shell: bash
+        run: |
+          if python pleinradar/scripts/update_pumperly.py; then
+            echo 'Source: Pumperly/ANWB — donnees indicatives' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Import impossible: donnees existantes conservees, aucun faux prix.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Enregistrer les donnees nouvelles
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add pleinradar/data/stations.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'data: actualiser les prix de PleinRadar'
+            git push origin HEAD:main
+          fi
+      - name: Preparer le site
+        shell: bash
+        run: |
+          mkdir -p _site/pleinradar/data
+          cp pleinradar/index.html _site/pleinradar/index.html
+          cp pleinradar/data/stations.json _site/pleinradar/data/stations.json
+          cp pleinradar/data/official.json _site/pleinradar/data/official.json
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Mettre en ligne
+        id: deploy
+        uses: actions/deploy-pages@v4
