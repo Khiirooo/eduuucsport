@@ -717,6 +717,7 @@ body.map-is-expanded{overflow:hidden}
 .garage-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.garage-head h3{font:800 22px 'Outfit',sans-serif;margin:0}.garage-head p{margin:6px 0 0;color:#7b9282;font-size:12px}
 .garage-row{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin-top:17px}.garage-row label{font-size:11px;font-weight:800;color:#5c7761;display:block;margin-bottom:6px}.garage-row select,.garage-form input,.garage-form select{width:100%;height:44px;padding:0 12px;border:1px solid #dce6d9;border-radius:10px;background:#f7faf6;color:#244732}.garage-chooser{flex:1;min-width:230px}.garage-btn{height:44px;padding:0 16px;border:0;border-radius:10px;background:#1e4934;color:white;font-size:12px;font-weight:800}.garage-btn.secondary{background:#e7f0e5;color:#275d3b}.garage-details{background:#eff6e9;padding:14px 16px;margin-top:13px;border-radius:10px}.garage-details strong{font-size:14px}.garage-details p{margin:5px 0;font-weight:700;color:#4b7452;font-size:12px}.garage-details small{color:#77917b}.garage-form{padding:17px;margin-top:14px;background:#f8fbf7;border:1px solid #e1eadf;border-radius:12px}.garage-form h4{margin:0 0 12px}.garage-fields{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px}.garage-form label{font-size:11px;font-weight:800;color:#5f7765}.garage-form input,.garage-form select{margin-top:6px}.garage-controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 @media(max-width:750px){.garage-fields{grid-template-columns:1fr 1fr}.garage-fields label:first-child{grid-column:1/-1}.garage-card{padding:17px}}
+.advanced-panel{margin:25px 0;background:#fff;border:1px solid #e4ece2;border-radius:18px;padding:23px}.advanced-panel h3{font:800 22px 'Outfit',sans-serif;margin:0 0 16px}.advanced-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.advanced-box{border:1px solid #e8efe6;border-radius:14px;background:#f9fbf7;padding:16px;display:flex;flex-direction:column;gap:11px}.advanced-box>strong{font-size:16px}.advanced-box label{font-size:12px;font-weight:700}.advanced-box input:not([type=range]),.advanced-box select{width:100%;margin-top:6px;padding:9px;border:1px solid #d9e3d6;border-radius:8px}.advanced-box button,.station-history button{border:0;border-radius:8px;background:#23533b;color:white;padding:10px;font-size:12px;font-weight:800}.advanced-box p{font-size:11px;color:#66816b;line-height:1.6}.station-extra{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}.station-extra span{background:#eef5eb;color:#516e59;border-radius:7px;font-size:10px;padding:6px 8px}.station-actions{flex-wrap:wrap}.station-history{margin-top:12px;border-top:1px solid #e4eee4;padding-top:10px}.station-history .price-graph{margin-top:10px}.extra-muted{font-size:12px;color:#688473}@media(max-width:850px){.advanced-grid{grid-template-columns:1fr}}
 </style>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
   <script>window.PLEINRADAR_STANDALONE_DEMO = false; window.PLEINRADAR_EMBEDDED_OFFICIAL = null;</script>
@@ -748,9 +749,9 @@ body.map-is-expanded{overflow:hidden}
   const state = {
     center: {...CITIES.ganshoren},fuel:'e10',radius:10,sort:'price',tank:40,onlyPriced:false,
     favoritesOnly:false,favorites:new Set(),stations:[],source:'',updatedAt:null,loaded:false,
-    demo:false,overpass:false,visible:8,selectedId:null,loading:false,official:null
+    demo:false,overpass:false,visible:8,selectedId:null,loading:false,official:null,level:0,consumption:6,route:null,history:{days:{}},serviceFilter:'',alerts:[]
   };
-  let map=null, markerLayer=null, centerMarker=null, mapResizeObserver=null;
+  let map=null, markerLayer=null, centerMarker=null, mapResizeObserver=null, routeLayer=null;
 
   // Modèles explicitement identifiés ; tout utilisateur peut corriger le volume.
   const VEHICLE_PRESETS=[
@@ -796,6 +797,61 @@ body.map-is-expanded{overflow:hidden}
     $('#vehicle-name').value=v?.name||'';$('#vehicle-tank').value=v?.tank||'';$('#vehicle-fuel').value=v?.fuel||'e10';$('#vehicle-name').focus();
   }
 
+
+  const EXTRAS_KEY='pleinradar-extras-v1';
+  const services={wash:'Lavage',air:'Gonflage',shop:'Boutique',always:'24h/24'};
+  const liters=()=>getVehicle()?Math.max(0,getVehicle().tank*(100-state.level)/100):state.tank;
+  function saveExtras(){try{localStorage.setItem(EXTRAS_KEY,JSON.stringify({level:state.level,consumption:state.consumption,alerts:state.alerts}));}catch(e){}}
+  function loadExtras(){try{const r=JSON.parse(localStorage.getItem(EXTRAS_KEY)||'{}');state.level=clamp(Number(r.level)||0,0,100);state.consumption=clamp(Number(r.consumption)||6,1,30);
+    state.alerts=Array.isArray(r.alerts)?r.alerts.filter(a=>a&&typeof a.id==='string'&&Object.prototype.hasOwnProperty.call(FUEL_LABELS,a.fuel)&&Number.isFinite(a.max)).slice(0,30):[];}catch(e){}
+    $('#level-input').value=state.level;$('#consumption-input').value=state.consumption;
+  }
+  async function loadHistory(){try{const response=await fetch('data/history.json?'+Date.now(),{cache:'no-store'});if(response.ok){const d=await response.json();if(d.days&&typeof d.days==='object')state.history=d;}}catch(e){}}
+  function historyHTML(id,n){
+    const days=Object.entries(state.history.days||{}).sort(([a],[b])=>a.localeCompare(b)).slice(-n);
+    const obs=days.map(([day,v])=>({day,value:v?.[id]?.[state.fuel]})).filter(x=>typeof x.value==='number'&&validPrice(x.value));
+    if(!obs.length)return '<p class="extra-muted">Aucun historique disponible : il commence au premier relevé enregistré.</p>';
+    const lo=Math.min(...obs.map(x=>x.value))-.02,hi=Math.max(...obs.map(x=>x.value))+.02;
+    const points=obs.map((x,i)=>[Math.round(i/Math.max(1,obs.length-1)*320),Math.round(105-(x.value-lo)/(hi-lo)*85)].join(',')).join(' ');
+    return '<svg viewBox="0 0 330 120" aria-label="Graphique de l’historique" role="img" style="width:100%;max-height:170px"><polyline points="'+points+'" fill="none" stroke="#347b4c" stroke-width="3"/></svg><p class="extra-muted">'+obs.length+' relevé(s) entre '+obs[0].day+' et '+obs.at(-1).day+'</p>';
+  }
+  function serviceOk(s){return !state.serviceFilter||s.services?.[state.serviceFilter]===true;}
+  function routeGap(s){
+    if(!state.route)return null;
+    let best=Infinity;
+    const p=state.route.points;
+    for(let i=1;i<p.length;i++){const a=p[i-1],b=p[i],x=(s.lon-a.lon)*70,y=(s.lat-a.lat)*111,vx=(b.lon-a.lon)*70,vy=(b.lat-a.lat)*111,t=clamp((x*vx+y*vy)/(vx*vx+vy*vy||1),0,1);best=Math.min(best,Math.hypot(x-t*vx,y-t*vy));}
+    return best;
+  }
+  function extraCost(s){const price=priceOf(s),gap=routeGap(s);return price===null||gap===null?null:(gap*2)*state.consumption/100*price;}
+  function totalCost(s){const price=priceOf(s);return price===null?null:price*liters()+(extraCost(s)||0);}
+  async function planRoute(){
+    const button=$('#route-go');button.disabled=true;
+    try{
+      const a=await geocodeCity($('#route-origin').value),b=await geocodeCity($('#route-dest').value);
+      const url='https://router.project-osrm.org/route/v1/driving/'+a.lon+','+a.lat+';'+b.lon+','+b.lat+'?overview=full&geometries=geojson';
+      const ctl=new AbortController();const timer=setTimeout(()=>ctl.abort(),14000);let response;try{response=await fetch(url,{signal:ctl.signal});}finally{clearTimeout(timer);}
+      if(!response.ok)throw Error('Itinéraire indisponible');
+      const j=await response.json(),r=j.routes?.[0];if(!r?.geometry?.coordinates?.length)throw Error('Aucun trajet trouvé');
+      state.route={points:r.geometry.coordinates.map(([lon,lat])=>({lon,lat})),km:r.distance/1000};
+      $('#route-info').textContent='Itinéraire '+formatNumber(state.route.km,1)+' km ; détour estimé ×2 à partir de la distance à vol d’oiseau.';
+      render();
+    }catch(e){notify('Impossible de calculer le trajet : '+e.message,'warning');}finally{button.disabled=false;}
+  }
+  function checkAlerts(){
+    if(state.demo)return;
+    for(const alert of state.alerts){
+      const s=state.stations.find(x=>x.id===alert.id);
+      if(!s||!stationQuoteFresh(s,alert.fuel)||!validPrice(s.prices?.[alert.fuel])||Number(s.prices[alert.fuel])>alert.max)continue;
+      const stamp=s.priceUpdatedAtByFuel?.[alert.fuel]||s.priceUpdatedAt;
+      if(alert.notified===stamp)continue;
+      alert.notified=stamp;
+      const msg=s.name+' : '+formatNumber(s.prices[alert.fuel],3)+' €/L (seuil '+formatNumber(alert.max,3)+')';
+      notify('Alerte : '+msg);
+      if('Notification' in window&&Notification.permission==='granted')new Notification('PleinRadar',{body:msg});
+    }
+    saveExtras();
+  }
   const stationElements=new Map();
   const markerElements=new Map();
   const fuelUnit=fuel=>fuel==='cng'?'€/kg':'€/L';
@@ -858,7 +914,7 @@ body.map-is-expanded{overflow:hidden}
       const age=state.updatedAt?Date.now()-new Date(state.updatedAt).getTime():Infinity;
       if(!Number.isFinite(age)||age>48*3600e3)notify('Les derniers prix téléchargés datent de plus de 48 heures. Vérifie le tarif à la pompe.','warning');
     }catch(err){console.warn('Lecture des prix :',err);await loadOSM();}
-    finally{state.loading=false;render();}
+    finally{state.loading=false;render();checkAlerts();}
   }
   async function loadOSM(){
     // OpenStreetMap lists actual station locations, not their pump prices.
@@ -881,21 +937,22 @@ body.map-is-expanded{overflow:hidden}
     }catch(e){state.stations=[];notify('Impossible de charger les prix ou les stations. Vérifie ta connexion, puis actualise la page.','error');}
   }
   function getResults(){
-    const nearby=state.stations.map(s=>({...s,distance:kmBetween(state.center,s)})).filter(s=>s.distance<=state.radius).sort((a,b)=>a.distance-b.distance);
+    const nearby=state.stations.map(s=>({...s,distance:kmBetween(state.center,s)})).filter(s=>state.route?routeGap(s)<=5:s.distance<=state.radius).sort((a,b)=>a.distance-b.distance);
     const available=nearby.map(priceOf).filter(p=>p!==null);const best=available.length?Math.min(...available):null;const highest=available.length?Math.max(...available):null;
-    let filtered=nearby.filter(s=>(!state.onlyPriced||priceOf(s)!==null)&&(!state.favoritesOnly||state.favorites.has(s.id)));
+    let filtered=nearby.filter(s=>(!state.onlyPriced||priceOf(s)!==null)&&(!state.favoritesOnly||state.favorites.has(s.id))&&serviceOk(s));
     if(state.sort==='price')filtered.sort((a,b)=>(priceOf(a)??Infinity)-(priceOf(b)??Infinity)||a.distance-b.distance);
+    if(state.sort==='net')filtered.sort((a,b)=>(totalCost(a)??Infinity)-(totalCost(b)??Infinity));
     if(state.sort==='distance')filtered.sort((a,b)=>a.distance-b.distance);
     if(state.sort==='brand')filtered.sort((a,b)=>a.name.localeCompare(b.name,'fr')||a.distance-b.distance);
     return {nearby,filtered,best,highest,priced:available.length};
   }
   function updateStats(result){
-    $('#city-title').textContent=state.center.label;$('#stat-radius').textContent=state.radius;$('#stat-tank').textContent=state.tank;
+    $('#city-title').textContent=state.center.label;$('#stat-radius').textContent=state.radius;$('#stat-tank').textContent=formatNumber(liters(),1);
     $('#stat-total').textContent=String(result.nearby.length);
     $('#stat-price').textContent=result.best!==null?formatNumber(result.best,3):'—';$('#stat-price-unit').textContent=fuelUnit(state.fuel);
     const bestStation=result.nearby.filter(s=>priceOf(s)===result.best).sort((a,b)=>a.distance-b.distance)[0];
     $('#stat-best-name').textContent=bestStation?(state.demo?'Démo · Prix fictif':bestStation.name):'Aucun prix disponible pour ce carburant';
-    $('#stat-save').textContent=result.priced>=2&&result.highest>result.best?formatNumber((result.highest-result.best)*state.tank,2):'—';
+    $('#stat-save').textContent=result.priced>=2&&result.highest>result.best?formatNumber((result.highest-result.best)*liters(),2):'—';
     const date=state.updatedAt?new Date(state.updatedAt):null;
     let msg='Prix indisponibles';
     if(state.demo)msg='Mode démonstration · Prix fictifs';
@@ -909,11 +966,16 @@ body.map-is-expanded{overflow:hidden}
     const initial=s.name.replace(/^(station[- ]?service|station)\s*/i,'').trim().split(/\s+/).slice(0,2).map(v=>v[0]||'').join('').toUpperCase().slice(0,2)||'⛽';
     const address=[s.address,[s.postalCode,s.city].filter(Boolean).join(' ')].filter(Boolean).join(' · ')||'Adresse non renseignée';
     const all=Object.entries(FUEL_LABELS).map(([key,label])=>{const value=stationQuoteFresh(s,key)&&validPrice(s.prices[key])?Number(s.prices[key]):null;return `<div class="grade-chip ${value===null?'no-price':''}"><span>${htmlSafe(label)}</span><strong>${value!==null?`${formatNumber(value,3)} ${fuelUnit(key)}`:'—'}</strong></div>`;}).join('');
+    const gap=routeGap(s),detour=extraCost(s);
+    const extra='<div class="station-extra"><span>À ajouter : '+formatNumber(liters(),1)+' L</span>'+
+      (gap===null?'':'<span>Détour estimé : '+formatNumber(gap*2,1)+' km · '+(detour===null?'coût inconnu':formatNumber(detour,2)+' €')+'</span>')+
+      (gap===null||totalCost(s)===null?'':'<span>Total avec détour : '+formatNumber(totalCost(s),2)+' €</span>')+
+      '<span>Services : '+(Object.entries(services).filter(([k])=>s.services?.[k]===true).map(([,v])=>v).join(', ')||'non renseignés')+'</span></div>';
     const driving=state.demo?'':`<a class="route-button" href="${routeUrl(s)}" target="_blank" rel="noopener noreferrer" aria-label="Itinéraire vers ${htmlSafe(s.name)}">Itinéraire ↗</a>`;
     return `<article class="station-card ${isBest?'is-best':''} ${state.selectedId===s.id?'is-selected':''}" data-id="${htmlSafe(s.id)}">
       <div class="station-top"><div class="station-logo">${htmlSafe(initial)}</div><div class="station-details"><h4 class="station-name">${htmlSafe(s.name)} ${isBest?'<span class="best-badge">MEILLEUR PRIX</span>':''} ${state.demo?'<span class="best-badge demo-badge">DÉMO</span>':''}</h4><div class="station-address">${htmlSafe(address)}</div></div><span class="station-distance">${svgPin} ${formatNumber(s.distance,1)} km</span></div>
-      <div class="station-price-row"><div><div class="station-price ${price===null?'unknown':''}">${price===null?'Prix non renseigné':`${formatNumber(price,3)} <span>${fuelUnit(state.fuel)}</span>`}</div><div class="station-price-caption">${price===null?'Aucune estimation affichée':state.demo?'Prix fictif · Démonstration':`Prix indicatif · ${s.priceUpdatedAtByFuel?.[state.fuel]||s.priceUpdatedAt?`importé ${new Date(s.priceUpdatedAtByFuel?.[state.fuel]||s.priceUpdatedAt).toLocaleDateString('fr-BE')}`:state.source} · à confirmer`}</div></div><div class="station-tank"><strong>${price!==null?formatNumber(price*state.tank,2)+' €':'—'}</strong><span>Pour ${formatNumber(state.tank,1)} L · ${htmlSafe(FUEL_LABELS[state.fuel])}</span></div></div>
-      <div class="station-actions"><button type="button" class="route-button focus-button" data-action="focus">◉ Carte</button>${driving}<button class="detail-button" type="button" data-action="details" aria-expanded="false">Tous les prix ↓</button><button class="star-button ${fav?'is-favorite':''}" type="button" data-action="favorite" title="${fav?'Retirer des favoris':'Ajouter aux favoris'}" aria-label="${fav?'Retirer des favoris':'Ajouter aux favoris'}" aria-pressed="${fav}">${svgHeart}</button></div><div class="all-prices" hidden>${all}</div></article>`;
+      <div class="station-price-row"><div><div class="station-price ${price===null?'unknown':''}">${price===null?'Prix non renseigné':`${formatNumber(price,3)} <span>${fuelUnit(state.fuel)}</span>`}</div><div class="station-price-caption">${price===null?'Aucune estimation affichée':state.demo?'Prix fictif · Démonstration':`Prix indicatif · ${s.priceUpdatedAtByFuel?.[state.fuel]||s.priceUpdatedAt?`importé ${new Date(s.priceUpdatedAtByFuel?.[state.fuel]||s.priceUpdatedAt).toLocaleDateString('fr-BE')}`:state.source} · à confirmer`}</div></div><div class="station-tank"><strong>${price!==null?formatNumber(price*liters(),2)+' €':'—'}</strong><span>Pour ${formatNumber(liters(),1)} L · ${htmlSafe(FUEL_LABELS[state.fuel])}</span></div></div>
+      ${extra}<div class="station-actions"><button type="button" class="route-button focus-button" data-action="focus">◉ Carte</button>${driving}<button class="detail-button" type="button" data-action="history">Historique</button><button class="detail-button" type="button" data-action="alert">Alerte</button><button class="detail-button" type="button" data-action="details" aria-expanded="false">Tous les prix ↓</button><button class="star-button ${fav?'is-favorite':''}" type="button" data-action="favorite" title="${fav?'Retirer des favoris':'Ajouter aux favoris'}" aria-label="${fav?'Retirer des favoris':'Ajouter aux favoris'}" aria-pressed="${fav}">${svgHeart}</button></div><div class="all-prices" hidden>${all}</div><div class="station-history" hidden></div></article>`;
   }
   function renderCards(result){
     const total=result.filtered.length;$('#list-count').textContent=total;
@@ -978,7 +1040,8 @@ body.map-is-expanded{overflow:hidden}
   }
   function renderMap(result){
     if(!initMap()){$('#map').innerHTML='<div class="map-placeholder">Carte indisponible : vérifie ta connexion internet.</div>';return;}
-    markerLayer.clearLayers();markerElements.clear();
+    markerLayer.clearLayers();markerElements.clear();if(routeLayer){map.removeLayer(routeLayer);routeLayer=null;}
+    if(state.route)routeLayer=L.polyline(state.route.points.map(p=>[p.lat,p.lon]),{color:'#3172b7',weight:5}).addTo(map);
     if(centerMarker)map.removeLayer(centerMarker);
     centerMarker=L.circleMarker([state.center.lat,state.center.lon],{radius:8,color:'#fff',weight:3,fillColor:'#234f71',fillOpacity:1}).addTo(map).bindTooltip('Centre de recherche',{direction:'top'});
     const stations=result.filtered.slice(0,500);
@@ -1003,7 +1066,7 @@ body.map-is-expanded{overflow:hidden}
   }
   function render(){
     if(state.loading)return;
-    const result=getResults();updateStats(result);renderCards(result);renderMap(result);
+    const result=getResults();updateStats(result);renderCards(result);renderMap(result);$('#level-value').textContent=state.level+' %';$('#liters-left').textContent=formatNumber(liters(),1);
     $('#btn-favorites').classList.toggle('active',state.favoritesOnly);
     $('#btn-favorites').title=state.favoritesOnly?'Afficher toutes les stations':'Afficher mes favoris';
   }
@@ -1055,6 +1118,12 @@ body.map-is-expanded{overflow:hidden}
     render();
   }
   function bindEvents(){
+    $('#level-input').addEventListener('input',e=>{state.level=Number(e.target.value);$('#level-value').textContent=state.level+' %';saveExtras();render();});
+    $('#consumption-input').addEventListener('change',e=>{state.consumption=clamp(Number(e.target.value)||6,1,30);saveExtras();render();});
+    $('#service-filter').addEventListener('change',e=>{state.serviceFilter=e.target.value;render();});
+    $('#route-go').addEventListener('click',planRoute);
+    $('#route-reset').addEventListener('click',()=>{state.route=null;$('#route-info').textContent='Aucun trajet';render();});
+    $('#notification-enable').addEventListener('click',async()=>{if('Notification' in window){const p=await Notification.requestPermission();notify(p==='granted'?'Notifications autorisées lorsque le site est ouvert.':'Notifications refusées.','warning');}});
     $('#vehicle-select').addEventListener('change',e=>selectVehicle(e.target.value));
     $('#vehicle-add').addEventListener('click',()=>openGarageEditor());
     $('#vehicle-edit').addEventListener('click',()=>openGarageEditor(true));
@@ -1099,6 +1168,11 @@ body.map-is-expanded{overflow:hidden}
       if(button.dataset.action==='demo'){createDemo();return;}
       const card=button.closest('.station-card');if(!card)return;const id=card.dataset.id;
       if(button.dataset.action==='focus'){focusStation(id);return;}
+      if(button.dataset.action==='history'){const el=card.querySelector('.station-history');el.hidden=!el.hidden;if(!el.hidden)el.innerHTML='<button data-action="days7" type="button">7 jours</button> <button data-action="days30" type="button">30 jours</button><div class="price-graph">'+historyHTML(id,7)+'</div>';return;}
+      if(button.dataset.action==='days7'||button.dataset.action==='days30'){card.querySelector('.price-graph').innerHTML=historyHTML(id,button.dataset.action==='days7'?7:30);return;}
+      if(button.dataset.action==='alert'){
+        const v=prompt('Seuil en €/L pour cette station :');if(v===null)return;const max=Number(v.replace(',','.'));if(!Number.isFinite(max)||max<0.3||max>4.5){notify('Seuil invalide','warning');return;}
+        state.alerts=state.alerts.filter(a=>!(a.id===id&&a.fuel===state.fuel));state.alerts.push({id,fuel:state.fuel,max});saveExtras();notify('Alerte locale enregistrée. Vérification à chaque visite/actualisation.');return;}
       if(button.dataset.action==='favorite'){if(state.favorites.has(id))state.favorites.delete(id);else state.favorites.add(id);saveFavorites();render();}
       if(button.dataset.action==='details'){const details=card.querySelector('.all-prices'),expanded=!details.hidden;details.hidden=expanded;button.setAttribute('aria-expanded',String(!expanded));button.textContent=expanded?'Tous les prix ↓':'Masquer les prix ↑';}
     });
@@ -1113,7 +1187,7 @@ body.map-is-expanded{overflow:hidden}
     ['#close-dialog','#dialog-okay'].forEach(sel=>$(sel).addEventListener('click',()=>dialog.close()));
     dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
   }
-  function start(){readFavorites();bindEvents();loadGarage();loadOfficial();const query=new URLSearchParams(location.search);if(query.get('demo')==='1'||window.PLEINRADAR_STANDALONE_DEMO===true){createDemo();return;}fetchData();setInterval(()=>{if(!state.loading&&state.loaded&&!state.demo)fetchData();},5*60*1000);}
+  function start(){readFavorites();bindEvents();loadGarage();loadExtras();loadHistory().then(()=>render());loadOfficial();const query=new URLSearchParams(location.search);if(query.get('demo')==='1'||window.PLEINRADAR_STANDALONE_DEMO===true){createDemo();return;}fetchData();setInterval(()=>{if(!state.loading&&state.loaded&&!state.demo)fetchData();},5*60*1000);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
 
@@ -1204,11 +1278,16 @@ body.map-is-expanded{overflow:hidden}
             <div class="garage-controls"><button type="submit" class="garage-btn">Enregistrer</button><button id="vehicle-cancel" type="button" class="garage-btn secondary">Annuler</button></div>
           </form>
         </section>
-        <section class="results-section" id="resultats" aria-label="Stations-service à proximité">
+<section class="advanced-panel" aria-label="Outils avancés">
+ <h3>Optimise ton plein</h3><div class="advanced-grid">
+ <div class="advanced-box"><strong>⛽ Carburant restant</strong><label for="level-input">Niveau actuel <b id="level-value">0 %</b></label><input id="level-input" type="range" min="0" max="100" step="5" value="0"><p>À ajouter : <strong id="liters-left">—</strong> L (avec véhicule enregistré)</p><label for="consumption-input">Consommation en L/100 km</label><input id="consumption-input" type="number" min="1" max="30" step=".1" value="6"></div>
+ <div class="advanced-box"><strong>🧭 Stations sur ton trajet</strong><label>Départ<input id="route-origin" placeholder="Ex. Bruxelles"></label><label>Arrivée<input id="route-dest" placeholder="Ex. Namur"></label><div><button id="route-go" type="button">Calculer</button> <button id="route-reset" type="button">Effacer</button></div><p id="route-info">Aucun trajet</p></div>
+ <div class="advanced-box"><strong>🔔 Services et alertes</strong><label for="service-filter">Service vérifié</label><select id="service-filter"><option value="">Tous</option><option value="wash">Lavage</option><option value="air">Gonflage</option><option value="shop">Boutique</option><option value="always">24h/24</option></select><button id="notification-enable" type="button">Autoriser les notifications</button><p>Alertes vérifiées quand le site est ouvert, pas en arrière-plan.</p></div>
+ </div></section>        <section class="results-section" id="resultats" aria-label="Stations-service à proximité">
           <div class="section-label results-label"><span class="section-label-icon">↗</span><span>02. COMPARE LES STATIONS</span></div>
           <div class="controls-bar">
             <div class="control-group"><label for="radius-select">Rayon de recherche</label><div class="select-wrap"><select id="radius-select"><option value="3">3 km</option><option value="5">5 km</option><option value="10" selected>10 km</option><option value="15">15 km</option><option value="25">25 km</option></select><span>⌄</span></div></div>
-            <div class="control-group"><label for="sort-select">Trier les résultats</label><div class="select-wrap"><select id="sort-select"><option value="price">Prix : moins cher d’abord</option><option value="distance">Distance : plus proche d’abord</option><option value="brand">Enseigne : A à Z</option></select><span>⌄</span></div></div>
+            <div class="control-group"><label for="sort-select">Trier les résultats</label><div class="select-wrap"><select id="sort-select"><option value="price">Prix : moins cher d’abord</option><option value="distance">Distance : plus proche d’abord</option><option value="net">Plein + détour estimé</option><option value="brand">Enseigne : A à Z</option></select><span>⌄</span></div></div>
             <div class="control-group tank-group"><label for="tank-input">Litres à remplir</label><div class="tank-wrap"><input id="tank-input" type="number" min="1" max="200" step="0.1" value="40" aria-label="Nombre de litres à remplir" /><span>litres</span></div></div>
             <label class="toggle-group"><input id="only-priced" type="checkbox" /><span class="toggle-slider"></span><span>Prix connus uniquement</span></label>
           </div>
