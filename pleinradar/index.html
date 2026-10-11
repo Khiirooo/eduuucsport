@@ -696,6 +696,23 @@ svg.leaflet-image-layer.leaflet-interactive path {
 .official-strip a{font-size:11px;color:#2b6d53;text-decoration:underline;text-underline-offset:2px}
 @media(max-width:640px){.official-strip{align-items:flex-start;padding:14px}.official-data{gap:6px}.official-data span{font-size:10px;padding:6px}}
 
+/* Vue agrandie d'une station */
+#map-backdrop{position:fixed;inset:0;background:rgba(10,28,21,.75);z-index:1999}
+.map-column.is-focused{position:fixed;inset:3vh 4vw;top:3vh!important;z-index:2000;display:flex;flex-direction:column;max-width:none}
+.map-column.is-focused .map-card{height:100%;min-height:0;display:flex;flex-direction:column;box-shadow:0 22px 75px #0005}
+.map-column.is-focused #map{height:auto!important;min-height:220px;flex:1}
+.map-column.is-focused .map-hint{display:none}
+body.map-is-expanded{overflow:hidden}
+#map-close{border:0;border-radius:8px;background:#e7f0e5;color:#28593e;font-weight:800;padding:8px 13px}
+.map-heading-actions{display:flex;gap:10px;align-items:center}
+.map-focus-panel{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 19px;background:#eff6ec}
+.map-focus-panel .focus-name{font-size:17px;font-weight:900}
+.map-focus-panel .focus-details{font-size:12px;color:#68826d}
+.map-focus-panel .focus-prices{font-size:13px;font-weight:800}
+.map-focus-panel a{padding:10px 14px;color:#fff;background:#204c37;border-radius:8px;text-decoration:none}
+.station-card{cursor:pointer}.focus-button{background:#316446}
+[hidden]{display:none!important}
+@media(max-width:680px){.map-column.is-focused{inset:0;top:0!important}.map-column.is-focused .map-card{border-radius:0}.map-column.is-focused .map-heading{padding:0 10px}.map-heading-actions{gap:5px}#map-close{padding:7px}.map-focus-panel{padding:10px}.map-column.is-focused .map-legend{padding:10px}}
 </style>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
   <script>window.PLEINRADAR_STANDALONE_DEMO = false; window.PLEINRADAR_EMBEDDED_OFFICIAL = null;</script>
@@ -847,7 +864,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
     return `<article class="station-card ${isBest?'is-best':''} ${state.selectedId===s.id?'is-selected':''}" data-id="${htmlSafe(s.id)}">
       <div class="station-top"><div class="station-logo">${htmlSafe(initial)}</div><div class="station-details"><h4 class="station-name">${htmlSafe(s.name)} ${isBest?'<span class="best-badge">MEILLEUR PRIX</span>':''} ${state.demo?'<span class="best-badge demo-badge">DÉMO</span>':''}</h4><div class="station-address">${htmlSafe(address)}</div></div><span class="station-distance">${svgPin} ${formatNumber(s.distance,1)} km</span></div>
       <div class="station-price-row"><div><div class="station-price ${price===null?'unknown':''}">${price===null?'Prix non renseigné':`${formatNumber(price,3)} <span>${fuelUnit(state.fuel)}</span>`}</div><div class="station-price-caption">${price===null?'Aucune estimation affichée':state.demo?'Prix fictif · Démonstration':`Prix indicatif · ${s.priceUpdatedAtByFuel?.[state.fuel]||s.priceUpdatedAt?`importé ${new Date(s.priceUpdatedAtByFuel?.[state.fuel]||s.priceUpdatedAt).toLocaleDateString('fr-BE')}`:state.source} · à confirmer`}</div></div><div class="station-tank"><strong>${price!==null?formatNumber(price*state.tank,2)+' €':'—'}</strong><span>Pour ${state.tank} litres</span></div></div>
-      <div class="station-actions">${driving}<button class="detail-button" type="button" data-action="details" aria-expanded="false">Tous les prix ↓</button><button class="star-button ${fav?'is-favorite':''}" type="button" data-action="favorite" title="${fav?'Retirer des favoris':'Ajouter aux favoris'}" aria-label="${fav?'Retirer des favoris':'Ajouter aux favoris'}" aria-pressed="${fav}">${svgHeart}</button></div><div class="all-prices" hidden>${all}</div></article>`;
+      <div class="station-actions"><button type="button" class="route-button focus-button" data-action="focus">◉ Carte</button>${driving}<button class="detail-button" type="button" data-action="details" aria-expanded="false">Tous les prix ↓</button><button class="star-button ${fav?'is-favorite':''}" type="button" data-action="favorite" title="${fav?'Retirer des favoris':'Ajouter aux favoris'}" aria-label="${fav?'Retirer des favoris':'Ajouter aux favoris'}" aria-pressed="${fav}">${svgHeart}</button></div><div class="all-prices" hidden>${all}</div></article>`;
   }
   function renderCards(result){
     const total=result.filtered.length;$('#list-count').textContent=total;
@@ -863,6 +880,31 @@ svg.leaflet-image-layer.leaflet-interactive path {
     }else{list.innerHTML=shown.map((s,i)=>stationCard(s,i,result.best)).join('');}
     $('#show-more-wrap').hidden=total<=state.visible;
     $('#show-more').textContent=`Afficher ${Math.min(8,total-state.visible)} stations de plus ↓`;
+  }
+
+  function closeMapFocus(){
+    const col=$('.map-column');if(!col.classList.contains('is-focused'))return;
+    col.classList.remove('is-focused');col.removeAttribute('role');col.removeAttribute('aria-modal');
+    document.body.classList.remove('map-is-expanded');
+    $('#map-close').hidden=true;$('#map-backdrop').hidden=true;$('#focus-station-panel').hidden=true;
+    requestAnimationFrame(()=>{if(map){map.invalidateSize({pan:false,animate:false});renderMap(getResults());}});
+  }
+  function focusStation(id){
+    const s=state.stations.find(p=>p.id===id);if(!s||!initMap())return;
+    state.selectedId=id;
+    $('.station-card').forEach(card=>card.classList.toggle('is-selected',card.dataset.id===id));
+    const price=priceOf(s);
+    $('#focus-station-name').textContent=s.name;
+    $('#focus-station-fuel').textContent=FUEL_LABELS[state.fuel];
+    $('#focus-station-price').textContent=price===null?'Prix inconnu':formatNumber(price,3)+' '+fuelUnit(state.fuel);
+    $('#focus-station-tank').textContent=price===null?'Coût du plein indisponible':formatNumber(price*state.tank,2)+' € / '+formatNumber(state.tank,1)+' L';
+    $('#focus-station-route').href=routeUrl(s);$('#focus-station-route').hidden=state.demo;
+    $('#focus-station-panel').hidden=false;$('#map-close').hidden=false;$('#map-backdrop').hidden=false;
+    const col=$('.map-column');col.classList.add('is-focused');col.setAttribute('role','dialog');col.setAttribute('aria-modal','true');col.setAttribute('aria-label','Station sélectionnée sur la carte');
+    document.body.classList.add('map-is-expanded');$('#map-close').focus({preventScroll:true});
+    requestAnimationFrame(()=>{map.invalidateSize({pan:false,animate:false});map.setView([s.lat,s.lon],16,{animate:false});
+      setTimeout(()=>{if(map){map.invalidateSize({pan:false,animate:false});markerElements.get(id)?.openPopup();}},140);
+    });
   }
   function initMap(){
     if(!window.L)return false;
@@ -899,12 +941,14 @@ svg.leaflet-image-layer.leaflet-interactive path {
       const icon=L.divIcon({className:'',html:`<div class="price-marker ${color}">${markerLabel}</div>`,iconSize:[72,36],iconAnchor:[36,43]});
       const marker=L.marker([s.lat,s.lon],{icon,title:s.name}).addTo(markerLayer);
       marker.bindPopup(`<div class="map-popup"><h3>${htmlSafe(s.name)}</h3><p>${htmlSafe(s.address||s.city||'Station-service')}</p><strong>${price!==null?`${formatNumber(price,3)} ${fuelUnit(state.fuel)}`:'Prix non renseigné'}</strong>${state.demo?'':`<a href="${routeUrl(s)}" target="_blank" rel="noopener noreferrer">Calculer l’itinéraire ↗</a>`}</div>`,{maxWidth:240});
-      marker.on('click',()=>{state.selectedId=s.id;$$('.station-card').forEach(card=>card.classList.toggle('is-selected',card.dataset.id===s.id));});
+      marker.on('click',()=>focusStation(s.id));
       markerElements.set(s.id,marker);bounds.extend([s.lat,s.lon]);
     }
     $('#map-count').textContent=`${stations.length} points`;
     map.invalidateSize({pan:false,animate:false});
-    if(stations.length){map.fitBounds(bounds.pad(.11),{maxZoom:14,animate:false});}
+    if($('.map-column').classList.contains('is-focused')&&state.selectedId&&stations.some(s=>s.id===state.selectedId)){
+      const chosen=stations.find(s=>s.id===state.selectedId);map.setView([chosen.lat,chosen.lon],16,{animate:false});
+    }else if(stations.length){map.fitBounds(bounds.pad(.11),{maxZoom:14,animate:false});}
     else{map.setView([state.center.lat,state.center.lon],11,{animate:false});}
     requestAnimationFrame(() => map.invalidateSize({pan:false,animate:false}));
   }
@@ -962,6 +1006,10 @@ svg.leaflet-image-layer.leaflet-interactive path {
     render();
   }
   function bindEvents(){
+    $('#map-close').addEventListener('click',closeMapFocus);
+    $('#map-backdrop').addEventListener('click',closeMapFocus);
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMapFocus();});
+
     $('#search-form').addEventListener('submit',event=>{event.preventDefault();searchCity($('#city-input').value);});
     $$('.quick-cities button').forEach(btn=>btn.addEventListener('click',()=>searchCity(btn.dataset.city)));
     $('#btn-geolocate').addEventListener('click',useLocation);
@@ -980,6 +1028,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       const button=event.target.closest('[data-action]');if(!button)return;
       if(button.dataset.action==='demo'){createDemo();return;}
       const card=button.closest('.station-card');if(!card)return;const id=card.dataset.id;
+      if(button.dataset.action==='focus'){focusStation(id);return;}
       if(button.dataset.action==='favorite'){if(state.favorites.has(id))state.favorites.delete(id);else state.favorites.add(id);saveFavorites();render();}
       if(button.dataset.action==='details'){const details=card.querySelector('.all-prices'),expanded=!details.hidden;details.hidden=expanded;button.setAttribute('aria-expanded',String(!expanded));button.textContent=expanded?'Tous les prix ↓':'Masquer les prix ↑';}
     });
@@ -987,7 +1036,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       if(event.target.closest('button,a'))return;const card=event.target.closest('.station-card');if(!card)return;
       state.selectedId=card.dataset.id;
       $$('.station-card').forEach(c=>c.classList.toggle('is-selected',c.dataset.id===card.dataset.id));
-      const marker=markerElements.get(card.dataset.id);if(marker&&map){map.panTo(marker.getLatLng());marker.openPopup();}
+      focusStation(card.dataset.id);
     });
     const dialog=$('#info-dialog');
     ['#btn-about','#btn-methodology','#footer-about'].forEach(sel=>$(sel).addEventListener('click',()=>dialog.showModal()));
@@ -1082,12 +1131,13 @@ svg.leaflet-image-layer.leaflet-interactive path {
           </div>
           <div class="results-layout">
             <div class="station-column"><div class="list-header"><div><h3>Les stations à proximité <span id="list-count">0</span></h3><p id="list-subtitle">Triées selon ton choix</p></div><button type="button" class="refresh-link" id="btn-refresh"><span>↻</span> Actualiser</button></div><div class="station-list" id="station-list"><div class="loading-state"><div class="loading-spinner"></div><h3>Recherche des stations…</h3><p>Préparation du comparatif</p></div></div><div id="show-more-wrap" class="show-more-wrap" hidden><button id="show-more" type="button">Afficher plus de stations ↓</button></div></div>
-            <aside class="map-column" aria-label="Carte des stations"><div class="map-card"><div class="map-heading"><div><span class="map-heading-pin">◉</span><strong>Carte des stations</strong></div><span id="map-count">0 points</span></div><div id="map" role="application" aria-label="Carte interactive des stations-service"><div class="map-placeholder">La carte est en cours de chargement…</div></div><div class="map-legend"><span><i class="legend-dot best"></i> Meilleur prix</span><span><i class="legend-dot other"></i> Prix connu</span><span><i class="legend-dot none"></i> Prix inconnu</span></div></div><div class="map-hint"><span>✦</span> Les distances sont calculées à vol d'oiseau, pas selon le trajet routier.</div></aside>
+            <aside class="map-column" aria-label="Carte des stations"><div class="map-card"><div class="map-heading"><div><span class="map-heading-pin">◉</span><strong>Carte des stations</strong></div><div class="map-heading-actions"><span id="map-count">0 points</span><button id="map-close" type="button" hidden>✕ Fermer</button></div></div><div id="map" role="application" aria-label="Carte interactive des stations-service"><div class="map-placeholder">La carte est en cours de chargement…</div></div><div id="focus-station-panel" class="map-focus-panel" hidden><div><div class="focus-name" id="focus-station-name"></div><div id="focus-station-fuel" class="focus-details"></div><div class="focus-prices"><span id="focus-station-price"></span> · <span id="focus-station-tank"></span></div></div><a id="focus-station-route" href="#" target="_blank" rel="noopener noreferrer">Itinéraire ↗</a></div><div class="map-legend"><span><i class="legend-dot best"></i> Meilleur prix</span><span><i class="legend-dot other"></i> Prix connu</span><span><i class="legend-dot none"></i> Prix inconnu</span></div></div><div class="map-hint"><span>✦</span> Les distances sont calculées à vol d'oiseau, pas selon le trajet routier.</div></aside>
           </div>
         </section>
         <section class="trust-section" aria-label="Informations importantes"><span class="trust-icon">i</span><p><strong>Bien comparer, c'est aussi connaître la source.</strong> Les prix à la pompe peuvent changer et toutes les stations ne remontent pas leurs tarifs. Les maxima officiels ci-dessus ne sont pas les prix des stations. Vérifie le tarif affiché avant de faire ton plein. <button id="btn-methodology" type="button">D'où viennent les prix ? ↗</button></p></section>
       </div>
     </main>
+    <div id="map-backdrop" hidden aria-hidden="true"></div>
     <footer class="site-footer"><div class="footer-brand"><span class="footer-logo">✳</span> PleinRadar <span class="footer-divider">/</span> Fais le plein, pas les frais.</div><div class="footer-links"><span>Fait pour la Belgique 🇧🇪</span><span>Carte © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a></span><button type="button" id="footer-about">Données et transparence</button></div></footer>
   </div>
   <dialog id="info-dialog" class="info-dialog" aria-labelledby="info-title"><div class="dialog-header"><span class="dialog-icon">i</span><button id="close-dialog" type="button" aria-label="Fermer">×</button></div><h2 id="info-title">Comment fonctionnent les prix ?</h2><p><strong>La carte et les comparaisons utilisent les stations et tarifs présents dans le fichier de données actualisé du site.</strong> Les tarifs indicatifs sont importés par GitHub Actions depuis Pumperly (ANWB pour la Belgique), normalement toutes les six heures. Leur disponibilité dépend de la source. La couverture dépend du fournisseur. Les prix affichés ne sont pas garantis en temps réel à la pompe.</p><p>La date de mise à jour du site est différente de l'heure à laquelle le pompiste a changé son tarif. Aucun prix inconnu n'est estimé ni inventé.</p><p>Les prix maximums publiés par le SPF Économie belge sont des plafonds et non les prix pratiqués dans chaque station. Pour les prix tiers, vérifier les conditions de réutilisation avant une publication commerciale.</p><p class="dialog-links"><a href="https://economie.fgov.be/fr/themes/energie/prix-de-lenergie/prix-maximum-des-produits/tarif-officiel-des-produits" target="_blank" rel="noopener noreferrer">Voir les tarifs officiels belges ↗</a> <a href="https://pumperly.com/" target="_blank" rel="noopener noreferrer">Pumperly / ANWB — source indicative ↗</a></p><button class="dialog-close" type="button" id="dialog-okay">Compris</button></dialog>
