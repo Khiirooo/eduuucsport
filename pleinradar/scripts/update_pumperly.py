@@ -75,6 +75,36 @@ def main():
           "source":"Pumperly / ANWB — prix indicatifs","sourceUrl":"https://pumperly.com/",
           "sourceNote":"Horodatage du fournisseur, non vérifié à la pompe",
           "stations":sorted(stations.values(),key=lambda s:(s["city"].lower(),s["name"].lower(),s["id"]))}
+    # L'historique conserve uniquement des observations réellement importées.
+    # Au maximum 30 dates civiles, sans inventer de valeurs passées.
+    history_path=OUT.with_name("history.json")
+    try:
+        history=json.loads(history_path.read_text(encoding="utf-8"))
+        if not isinstance(history,dict) or not isinstance(history.get("days"),dict):
+            history={"days":{}}
+    except (FileNotFoundError, ValueError):
+        history={"days":{}}
+    today=NOW.date().isoformat()
+    todays_prices={}
+    for station in data["stations"]:
+        fresh={}
+        for fuel,price in station["prices"].items():
+            timestamp=datetime.fromisoformat(station["priceUpdatedAtByFuel"][fuel].replace("Z","+00:00"))
+            if NOW-timestamp <= timedelta(hours=30):
+                fresh[fuel]=price
+        if fresh:
+            todays_prices[station["id"]]=fresh
+    if todays_prices:
+        history["days"][today]=todays_prices
+    cutoff=(NOW-timedelta(days=29)).date().isoformat()
+    history["days"]={day:history["days"][day] for day in sorted(history["days"])
+                     if isinstance(day,str) and len(day)==10 and cutoff<=day<=today}
+    history["updatedAt"]=data["updatedAt"]
+    history["source"]="Observations Pumperly / ANWB, sans prix reconstitués"
+    history_path.parent.mkdir(parents=True,exist_ok=True)
+    hist_tmp=history_path.with_suffix(".tmp")
+    hist_tmp.write_text(json.dumps(history,ensure_ascii=False,separators=(",",":")),encoding="utf-8")
+    hist_tmp.replace(history_path)
     OUT.parent.mkdir(parents=True,exist_ok=True)
     temp=OUT.with_suffix(".tmp")
     temp.write_text(json.dumps(data,ensure_ascii=False,separators=(",",":")),encoding="utf-8")
