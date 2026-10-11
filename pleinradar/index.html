@@ -713,6 +713,10 @@ body.map-is-expanded{overflow:hidden}
 .station-card{cursor:pointer}.focus-button{background:#316446}
 [hidden]{display:none!important}
 @media(max-width:680px){.map-column.is-focused{inset:0;top:0!important}.map-column.is-focused .map-card{border-radius:0}.map-column.is-focused .map-heading{padding:0 10px}.map-heading-actions{gap:5px}#map-close{padding:7px}.map-focus-panel{padding:10px}.map-column.is-focused .map-legend{padding:10px}}
+.garage-card{margin:25px 0;background:#fff;border:1px solid #e4ece2;border-radius:18px;padding:24px;box-shadow:var(--shadow)}
+.garage-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.garage-head h3{font:800 22px 'Outfit',sans-serif;margin:0}.garage-head p{margin:6px 0 0;color:#7b9282;font-size:12px}
+.garage-row{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin-top:17px}.garage-row label{font-size:11px;font-weight:800;color:#5c7761;display:block;margin-bottom:6px}.garage-row select,.garage-form input,.garage-form select{width:100%;height:44px;padding:0 12px;border:1px solid #dce6d9;border-radius:10px;background:#f7faf6;color:#244732}.garage-chooser{flex:1;min-width:230px}.garage-btn{height:44px;padding:0 16px;border:0;border-radius:10px;background:#1e4934;color:white;font-size:12px;font-weight:800}.garage-btn.secondary{background:#e7f0e5;color:#275d3b}.garage-details{background:#eff6e9;padding:14px 16px;margin-top:13px;border-radius:10px}.garage-details strong{font-size:14px}.garage-details p{margin:5px 0;font-weight:700;color:#4b7452;font-size:12px}.garage-details small{color:#77917b}.garage-form{padding:17px;margin-top:14px;background:#f8fbf7;border:1px solid #e1eadf;border-radius:12px}.garage-form h4{margin:0 0 12px}.garage-fields{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px}.garage-form label{font-size:11px;font-weight:800;color:#5f7765}.garage-form input,.garage-form select{margin-top:6px}.garage-controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+@media(max-width:750px){.garage-fields{grid-template-columns:1fr 1fr}.garage-fields label:first-child{grid-column:1/-1}.garage-card{padding:17px}}
 </style>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
   <script>window.PLEINRADAR_STANDALONE_DEMO = false; window.PLEINRADAR_EMBEDDED_OFFICIAL = null;</script>
@@ -747,6 +751,51 @@ body.map-is-expanded{overflow:hidden}
     demo:false,overpass:false,visible:8,selectedId:null,loading:false,official:null
   };
   let map=null, markerLayer=null, centerMarker=null, mapResizeObserver=null;
+
+  // Modèles explicitement identifiés ; tout utilisateur peut corriger le volume.
+  const VEHICLE_PRESETS=[
+    {id:'cb500x2013',name:'Honda CB500X 2013',tank:17.3,fuel:'e10',source:'Honda · 17,3 L'}
+  ];
+  const GARAGE_KEY='pleinradar-garage-v1';
+  let savedVehicles=[],chosenVehicle='';
+  const getVehicle=()=>chosenVehicle.startsWith('preset:')?VEHICLE_PRESETS.find(v=>'preset:'+v.id===chosenVehicle):
+    chosenVehicle.startsWith('saved:')?savedVehicles.find(v=>'saved:'+v.id===chosenVehicle):null;
+  function syncTabs(){$('.fuel-tab').forEach(btn=>{const selected=btn.dataset.fuel===state.fuel;btn.classList.toggle('active',selected);btn.setAttribute('aria-pressed',String(selected));});}
+  function garageUI(){
+    const el=$('#vehicle-select');if(!el)return;
+    el.innerHTML='<option value="">Saisie libre</option><optgroup label="Modèles répertoriés">'+VEHICLE_PRESETS.map(v=>'<option value="preset:'+htmlSafe(v.id)+'">'+htmlSafe(v.name)+'</option>').join('')+
+      '</optgroup>'+(savedVehicles.length?'<optgroup label="Mes véhicules">'+savedVehicles.map(v=>'<option value="saved:'+htmlSafe(v.id)+'">'+htmlSafe(v.name)+'</option>').join('')+'</optgroup>':'');
+    el.value=chosenVehicle;
+    const v=getVehicle();
+    $('#garage-name').textContent=v?v.name:'Choisis ou ajoute ton véhicule';
+    $('#garage-specs').textContent=v?formatNumber(v.tank,1)+' litres · '+FUEL_LABELS[v.fuel]:'Indique la capacité et le carburant pour calculer ton plein.';
+    $('#garage-source').textContent=v?(v.source||'Valeurs enregistrées sur cet appareil')+' · Vérifie la version exacte':'Tu peux toujours indiquer une quantité différente à remplir.';
+    $('#vehicle-edit').hidden=!v||!chosenVehicle.startsWith('saved:');
+    $('#vehicle-remove').hidden=!v||!chosenVehicle.startsWith('saved:');
+    $('#tank-input').value=state.tank;syncTabs();
+  }
+  function saveGarage(){try{localStorage.setItem(GARAGE_KEY,JSON.stringify({vehicles:savedVehicles,selected:chosenVehicle}));}catch(e){}}
+  function selectVehicle(id){
+    chosenVehicle=id;const v=getVehicle();
+    if(v){state.tank=Number(v.tank);state.fuel=v.fuel;state.visible=8;}
+    saveGarage();garageUI();render();
+  }
+  function loadGarage(){
+    try{const raw=JSON.parse(localStorage.getItem(GARAGE_KEY)||'{}');
+      if(Array.isArray(raw.vehicles))savedVehicles=raw.vehicles.filter(v=>typeof v.id==='string'&&typeof v.name==='string'&&v.name.length<=100&&Number.isFinite(Number(v.tank))&&v.tank>=1&&v.tank<=200&&Object.prototype.hasOwnProperty.call(FUEL_LABELS,v.fuel)).slice(0,30);
+      if(typeof raw.selected==='string')chosenVehicle=raw.selected;
+    }catch(e){}
+    if(chosenVehicle&&!getVehicle())chosenVehicle='';
+    const v=getVehicle();if(v){state.tank=Number(v.tank);state.fuel=v.fuel;}
+    garageUI();
+  }
+  function openGarageEditor(edit=false){
+    const v=edit?getVehicle():null;
+    $('#vehicle-form').hidden=false;$('#vehicle-form').dataset.edit=edit&&chosenVehicle.startsWith('saved:')?chosenVehicle:'';
+    $('#vehicle-form-title').textContent=edit?'Modifier mon véhicule':'Ajouter mon véhicule';
+    $('#vehicle-name').value=v?.name||'';$('#vehicle-tank').value=v?.tank||'';$('#vehicle-fuel').value=v?.fuel||'e10';$('#vehicle-name').focus();
+  }
+
   const stationElements=new Map();
   const markerElements=new Map();
   const fuelUnit=fuel=>fuel==='cng'?'€/kg':'€/L';
@@ -863,7 +912,7 @@ body.map-is-expanded{overflow:hidden}
     const driving=state.demo?'':`<a class="route-button" href="${routeUrl(s)}" target="_blank" rel="noopener noreferrer" aria-label="Itinéraire vers ${htmlSafe(s.name)}">Itinéraire ↗</a>`;
     return `<article class="station-card ${isBest?'is-best':''} ${state.selectedId===s.id?'is-selected':''}" data-id="${htmlSafe(s.id)}">
       <div class="station-top"><div class="station-logo">${htmlSafe(initial)}</div><div class="station-details"><h4 class="station-name">${htmlSafe(s.name)} ${isBest?'<span class="best-badge">MEILLEUR PRIX</span>':''} ${state.demo?'<span class="best-badge demo-badge">DÉMO</span>':''}</h4><div class="station-address">${htmlSafe(address)}</div></div><span class="station-distance">${svgPin} ${formatNumber(s.distance,1)} km</span></div>
-      <div class="station-price-row"><div><div class="station-price ${price===null?'unknown':''}">${price===null?'Prix non renseigné':`${formatNumber(price,3)} <span>${fuelUnit(state.fuel)}</span>`}</div><div class="station-price-caption">${price===null?'Aucune estimation affichée':state.demo?'Prix fictif · Démonstration':`Prix indicatif · ${s.priceUpdatedAtByFuel?.[state.fuel]||s.priceUpdatedAt?`importé ${new Date(s.priceUpdatedAtByFuel?.[state.fuel]||s.priceUpdatedAt).toLocaleDateString('fr-BE')}`:state.source} · à confirmer`}</div></div><div class="station-tank"><strong>${price!==null?formatNumber(price*state.tank,2)+' €':'—'}</strong><span>Pour ${state.tank} litres</span></div></div>
+      <div class="station-price-row"><div><div class="station-price ${price===null?'unknown':''}">${price===null?'Prix non renseigné':`${formatNumber(price,3)} <span>${fuelUnit(state.fuel)}</span>`}</div><div class="station-price-caption">${price===null?'Aucune estimation affichée':state.demo?'Prix fictif · Démonstration':`Prix indicatif · ${s.priceUpdatedAtByFuel?.[state.fuel]||s.priceUpdatedAt?`importé ${new Date(s.priceUpdatedAtByFuel?.[state.fuel]||s.priceUpdatedAt).toLocaleDateString('fr-BE')}`:state.source} · à confirmer`}</div></div><div class="station-tank"><strong>${price!==null?formatNumber(price*state.tank,2)+' €':'—'}</strong><span>Pour ${formatNumber(state.tank,1)} L · ${htmlSafe(FUEL_LABELS[state.fuel])}</span></div></div>
       <div class="station-actions"><button type="button" class="route-button focus-button" data-action="focus">◉ Carte</button>${driving}<button class="detail-button" type="button" data-action="details" aria-expanded="false">Tous les prix ↓</button><button class="star-button ${fav?'is-favorite':''}" type="button" data-action="favorite" title="${fav?'Retirer des favoris':'Ajouter aux favoris'}" aria-label="${fav?'Retirer des favoris':'Ajouter aux favoris'}" aria-pressed="${fav}">${svgHeart}</button></div><div class="all-prices" hidden>${all}</div></article>`;
   }
   function renderCards(result){
@@ -1006,6 +1055,28 @@ body.map-is-expanded{overflow:hidden}
     render();
   }
   function bindEvents(){
+    $('#vehicle-select').addEventListener('change',e=>selectVehicle(e.target.value));
+    $('#vehicle-add').addEventListener('click',()=>openGarageEditor());
+    $('#vehicle-edit').addEventListener('click',()=>openGarageEditor(true));
+    $('#vehicle-cancel').addEventListener('click',()=>{$('#vehicle-form').hidden=true;});
+    $('#vehicle-remove').addEventListener('click',()=>{
+      if(!chosenVehicle.startsWith('saved:'))return;
+      savedVehicles=savedVehicles.filter(v=>'saved:'+v.id!==chosenVehicle);
+      chosenVehicle='';saveGarage();garageUI();render();
+    });
+    $('#vehicle-form').addEventListener('submit',e=>{
+      e.preventDefault();
+      const name=$('#vehicle-name').value.trim().slice(0,100),tank=Number($('#vehicle-tank').value),fuel=$('#vehicle-fuel').value;
+      if(!name||!Number.isFinite(tank)||tank<1||tank>200||!Object.prototype.hasOwnProperty.call(FUEL_LABELS,fuel)){notify('Vérifie le nom, la capacité et le carburant du véhicule.','warning');return;}
+      const edit=$('#vehicle-form').dataset.edit;
+      if(!edit&&savedVehicles.length>=30){notify('Le garage peut enregistrer 30 véhicules.','warning');return;}
+      const id=edit?edit.slice(6):'v'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+      const v={id,name,tank,fuel,source:''};
+      if(edit)savedVehicles=savedVehicles.map(x=>x.id===id?v:x);else savedVehicles.push(v);
+      $('#vehicle-form').hidden=true;selectVehicle('saved:'+id);
+      notify('Véhicule enregistré. Les coûts des pleins utilisent maintenant son réservoir et son carburant.');
+    });
+
     $('#map-close').addEventListener('click',closeMapFocus);
     $('#map-backdrop').addEventListener('click',closeMapFocus);
     document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMapFocus();});
@@ -1014,8 +1085,7 @@ body.map-is-expanded{overflow:hidden}
     $$('.quick-cities button').forEach(btn=>btn.addEventListener('click',()=>searchCity(btn.dataset.city)));
     $('#btn-geolocate').addEventListener('click',useLocation);
     $('#fuel-tabs').addEventListener('click',event=>{
-      const btn=event.target.closest('[data-fuel]');if(!btn)return;state.fuel=btn.dataset.fuel;state.visible=8;
-      $$('.fuel-tab').forEach(tab=>{tab.classList.toggle('active',tab===btn);tab.setAttribute('aria-pressed',String(tab===btn));});render();
+      const btn=event.target.closest('[data-fuel]');if(!btn)return;state.fuel=btn.dataset.fuel;state.visible=8;syncTabs();render();
     });
     $('#radius-select').addEventListener('change',async event=>{state.radius=Number(event.target.value);state.visible=8;if(state.overpass){state.loading=true;showLoading();await loadOSM();state.loading=false;}render();});
     $('#sort-select').addEventListener('change',event=>{state.sort=event.target.value;render();});
@@ -1043,7 +1113,7 @@ body.map-is-expanded{overflow:hidden}
     ['#close-dialog','#dialog-okay'].forEach(sel=>$(sel).addEventListener('click',()=>dialog.close()));
     dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
   }
-  function start(){readFavorites();bindEvents();loadOfficial();const query=new URLSearchParams(location.search);if(query.get('demo')==='1'||window.PLEINRADAR_STANDALONE_DEMO===true){createDemo();return;}fetchData();setInterval(()=>{if(!state.loading&&state.loaded&&!state.demo)fetchData();},5*60*1000);}
+  function start(){readFavorites();bindEvents();loadGarage();loadOfficial();const query=new URLSearchParams(location.search);if(query.get('demo')==='1'||window.PLEINRADAR_STANDALONE_DEMO===true){createDemo();return;}fetchData();setInterval(()=>{if(!state.loading&&state.loaded&&!state.demo)fetchData();},5*60*1000);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
 
@@ -1121,12 +1191,25 @@ body.map-is-expanded{overflow:hidden}
           </div>
         </section>
 
+
+        <section class="garage-card" aria-label="Mes véhicules">
+          <div class="garage-head"><div><h3>🚗 Mon garage</h3><p>Choisis ton véhicule pour comparer le coût de son plein à chaque station.</p></div><button id="vehicle-add" type="button" class="garage-btn">+ Ajouter mon véhicule</button></div>
+          <div class="garage-row"><div class="garage-chooser"><label for="vehicle-select">Véhicule utilisé</label><select id="vehicle-select"><option value="">Saisie libre</option></select></div>
+          <button id="vehicle-edit" type="button" class="garage-btn secondary" hidden>Modifier</button><button id="vehicle-remove" type="button" class="garage-btn secondary" hidden>Supprimer</button></div>
+          <div class="garage-details"><strong id="garage-name">Choisis ou ajoute ton véhicule</strong><p id="garage-specs"></p><small id="garage-source">Tu peux modifier le nombre de litres à remplir ci-dessous.</small></div>
+          <form class="garage-form" id="vehicle-form" hidden><h4 id="vehicle-form-title">Ajouter mon véhicule</h4>
+            <div class="garage-fields"><label>Marque et modèle<input id="vehicle-name" maxlength="100" placeholder="Ex. Peugeot 208 1.2 2020" required></label>
+              <label>Réservoir (L)<input id="vehicle-tank" type="number" min="1" max="200" step="0.1" placeholder="45" required></label>
+              <label>Carburant<select id="vehicle-fuel"><option value="e10">Essence 95 E10</option><option value="e5_98">Essence 98 E5</option><option value="b7">Diesel B7</option><option value="b7_premium">Diesel premium</option><option value="lpg">LPG</option><option value="cng">CNG</option></select></label></div>
+            <div class="garage-controls"><button type="submit" class="garage-btn">Enregistrer</button><button id="vehicle-cancel" type="button" class="garage-btn secondary">Annuler</button></div>
+          </form>
+        </section>
         <section class="results-section" id="resultats" aria-label="Stations-service à proximité">
           <div class="section-label results-label"><span class="section-label-icon">↗</span><span>02. COMPARE LES STATIONS</span></div>
           <div class="controls-bar">
             <div class="control-group"><label for="radius-select">Rayon de recherche</label><div class="select-wrap"><select id="radius-select"><option value="3">3 km</option><option value="5">5 km</option><option value="10" selected>10 km</option><option value="15">15 km</option><option value="25">25 km</option></select><span>⌄</span></div></div>
             <div class="control-group"><label for="sort-select">Trier les résultats</label><div class="select-wrap"><select id="sort-select"><option value="price">Prix : moins cher d’abord</option><option value="distance">Distance : plus proche d’abord</option><option value="brand">Enseigne : A à Z</option></select><span>⌄</span></div></div>
-            <div class="control-group tank-group"><label for="tank-input">Mon plein</label><div class="tank-wrap"><input id="tank-input" type="number" min="1" max="200" step="1" value="40" aria-label="Nombre de litres pour le plein" /><span>litres</span></div></div>
+            <div class="control-group tank-group"><label for="tank-input">Litres à remplir</label><div class="tank-wrap"><input id="tank-input" type="number" min="1" max="200" step="0.1" value="40" aria-label="Nombre de litres à remplir" /><span>litres</span></div></div>
             <label class="toggle-group"><input id="only-priced" type="checkbox" /><span class="toggle-slider"></span><span>Prix connus uniquement</span></label>
           </div>
           <div class="results-layout">
